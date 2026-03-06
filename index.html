@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#080810" />
+  <meta name="theme-color" content="#080810" id="meta-theme-color" />
   <title>Dashboard Financeiro 💳</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,12 +22,57 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 16px; -webkit-text-size-adjust: 100%; }
-    body { background: #080810; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg-root); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; transition: background .25s; }
     #root { min-height: 100dvh; }
+
+    /* ── DARK THEME (default) ── */
+    :root {
+      --bg-root:       #080810;
+      --bg-base:       #0a0a14;
+      --bg-card:       #0c0c18;
+      --bg-card-alt:   #0d0d1a;
+      --bg-input:      #0f172a;
+      --bg-drawer:     #0e0e1a;
+      --border-subtle: #0a0a14;
+      --border-muted:  #0f172a;
+      --border-med:    #1e293b;
+      --text-primary:  #f1f5f9;
+      --text-sec:      #cbd5e1;
+      --text-muted:    #94a3b8;
+      --text-dim:      #475569;
+      --text-faint:    #334155;
+      --text-ghost:    #1e293b;
+      --nav-inactive:  #334155;
+      --chip-bg:       #0f172a;
+      --tt-bg:         #0f172a;
+      --theme-icon:    "☀️";
+    }
+
+    /* ── LIGHT THEME ── */
+    html.light {
+      --bg-root:       #f0f4f8;
+      --bg-base:       #ffffff;
+      --bg-card:       #ffffff;
+      --bg-card-alt:   #f8fafc;
+      --bg-input:      #f1f5f9;
+      --bg-drawer:     #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-muted:  #e2e8f0;
+      --border-med:    #cbd5e1;
+      --text-primary:  #0f172a;
+      --text-sec:      #1e293b;
+      --text-muted:    #334155;
+      --text-dim:      #475569;
+      --text-faint:    #64748b;
+      --text-ghost:    #94a3b8;
+      --nav-inactive:  #94a3b8;
+      --chip-bg:       #f1f5f9;
+      --tt-bg:         #ffffff;
+    }
 
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 99px; }
 
     @keyframes spin    { to { transform: rotate(360deg); } }
     @keyframes fadeUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
@@ -46,20 +91,34 @@
     .card-tap:active  { transform: scale(.98); }
     .btn-tap:active   { transform: scale(.96); }
 
+    /* Theme toggle button */
+    .theme-toggle {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1px solid var(--border-med);
+      background: var(--bg-input);
+      font-size: 16px; cursor: pointer; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .theme-toggle:active { transform: scale(.92); }
+
     /* Bottom nav */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-      background: #0a0a14;
-      border-top: 1px solid #0f172a;
+      background: var(--bg-base);
+      border-top: 1px solid var(--border-muted);
       display: flex;
       padding-bottom: env(safe-area-inset-bottom, 0px);
+      transition: background .25s, border-color .25s;
     }
     .nav-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 3px;
       padding: 10px 4px 8px;
       border: none; background: transparent;
-      color: #334155; font-family: 'DM Mono', monospace;
+      color: var(--nav-inactive); font-family: 'DM Mono', monospace;
       font-size: 9px; letter-spacing: .04em;
       cursor: pointer; transition: color .15s;
       -webkit-tap-highlight-color: transparent;
@@ -70,23 +129,24 @@
     /* Drawer overlay */
     .drawer-overlay {
       position: fixed; inset: 0; z-index: 300;
-      background: rgba(0,0,0,.7);
+      background: rgba(0,0,0,.55);
       backdrop-filter: blur(4px);
       animation: fadeIn .2s ease both;
     }
     .drawer {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 301;
-      background: #0e0e1a;
+      background: var(--bg-drawer);
       border-radius: 20px 20px 0 0;
-      border-top: 1px solid #1e293b;
+      border-top: 1px solid var(--border-med);
       padding: 0 0 env(safe-area-inset-bottom, 16px);
       animation: slideUp .3s cubic-bezier(.16,1,.3,1) both;
       max-height: 85dvh;
       overflow-y: auto;
+      transition: background .25s;
     }
     .drawer-handle {
       width: 36px; height: 4px; border-radius: 99px;
-      background: #1e293b; margin: 12px auto 16px;
+      background: var(--border-med); margin: 12px auto 16px;
     }
 
     /* Inputs & selects */
@@ -102,8 +162,8 @@
     .chip-scroll::-webkit-scrollbar { display: none; }
     .chip {
       flex-shrink: 0; padding: 6px 12px; border-radius: 99px;
-      border: 1px solid #1e293b; background: #0f172a;
-      color: #475569; font-size: 11px; cursor: pointer;
+      border: 1px solid var(--border-med); background: var(--chip-bg);
+      color: var(--text-dim); font-size: 11px; cursor: pointer;
       white-space: nowrap; transition: all .15s;
       -webkit-tap-highlight-color: transparent;
     }
@@ -114,15 +174,15 @@
     .txn-card {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 16px;
-      border-bottom: 1px solid #0a0a14;
-      background: #0c0c18;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-card);
       transition: background .08s;
       -webkit-tap-highlight-color: transparent;
     }
-    .txn-card:active { background: #0f172a; }
+    .txn-card:active { background: var(--bg-input); }
 
     /* Progress bar */
-    .prog-bar { height: 3px; border-radius: 99px; background: #0f172a; overflow: hidden; }
+    .prog-bar { height: 3px; border-radius: 99px; background: var(--border-muted); overflow: hidden; }
     .prog-fill { height: 100%; border-radius: 99px; }
   </style>
 </head>
@@ -130,6 +190,38 @@
 <div id="root"></div>
 <script type="text/babel" data-presets="react">
 const { useState, useMemo, useRef, useEffect, useCallback } = React;
+
+// ─── THEME ───────────────────────────────────
+function useTheme() {
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const metaTheme = document.getElementById("meta-theme-color");
+    if (dark) {
+      html.classList.remove("light");
+      if (metaTheme) metaTheme.setAttribute("content", "#080810");
+    } else {
+      html.classList.add("light");
+      if (metaTheme) metaTheme.setAttribute("content", "#f0f4f8");
+    }
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  return [dark, () => setDark(d => !d)];
+}
+
+function ThemeToggleBtn({ dark, toggle }) {
+  return (
+    <button className="theme-toggle tap-target" onClick={toggle} title={dark ? "Modo claro" : "Modo escuro"}>
+      {dark ? "☀️" : "🌙"}
+    </button>
+  );
+}
 
 if (typeof Recharts === "undefined") {
   document.getElementById("root").innerHTML =
@@ -274,7 +366,7 @@ async function processFile(file){
 }
 
 // ─── UPLOAD SCREEN ────────────────────────────
-function UploadScreen({onLoad}) {
+function UploadScreen({onLoad, dark, toggleTheme}) {
   const [files,setFiles]=useState([]);
   const [loading,setLoading]=useState(false);
   const [progress,setProgress]=useState("");
@@ -306,16 +398,21 @@ function UploadScreen({onLoad}) {
   };
 
   return (
-    <div style={{minHeight:"100dvh",background:"#080810",display:"flex",flexDirection:"column",fontFamily:"'DM Mono',monospace",padding:"env(safe-area-inset-top,0px) 20px 32px",overflowY:"auto"}}>
+    <div style={{minHeight:"100dvh",background:"var(--bg-root)",display:"flex",flexDirection:"column",fontFamily:"'DM Mono',monospace",padding:"env(safe-area-inset-top,0px) 20px 32px",overflowY:"auto"}}>
       <div className="fade-up" style={{width:"100%",maxWidth:480,margin:"auto",paddingTop:40}}>
+
+        {/* Theme toggle top-right */}
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+          <ThemeToggleBtn dark={dark} toggle={toggleTheme}/>
+        </div>
 
         {/* Header */}
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{fontSize:48,marginBottom:10}}>💳</div>
-          <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:800,color:"#f1f5f9",margin:"0 0 6px",letterSpacing:"-0.03em"}}>
+          <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:800,color:"var(--text-primary)",margin:"0 0 6px",letterSpacing:"-0.03em"}}>
             Dashboard Financeiro
           </h1>
-          <p style={{color:"#334155",fontSize:11,letterSpacing:"0.06em"}}>
+          <p style={{color:"var(--text-faint)",fontSize:11,letterSpacing:"0.06em"}}>
             ANÁLISE DE CARTÕES DE CRÉDITO
           </p>
         </div>
@@ -324,26 +421,26 @@ function UploadScreen({onLoad}) {
         <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
         <div className="tap-target btn-tap"
           onClick={()=>inputRef.current?.click()}
-          style={{width:"100%",padding:"28px 20px",borderRadius:20,border:"2px dashed #1e293b",background:"#0c0c18",cursor:"pointer",marginBottom:12,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+          style={{width:"100%",padding:"28px 20px",borderRadius:20,border:"2px dashed var(--border-med)",background:"var(--bg-card)",cursor:"pointer",marginBottom:12,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
           <span style={{fontSize:32}}>📁</span>
-          <span style={{color:"#cbd5e1",fontSize:14,fontWeight:500}}>Selecionar arquivos</span>
-          <span style={{color:"#334155",fontSize:11}}>.CSV (Nubank) · .PDF (Ailos / Inter)</span>
+          <span style={{color:"var(--text-sec)",fontSize:14,fontWeight:500}}>Selecionar arquivos</span>
+          <span style={{color:"var(--text-faint)",fontSize:11}}>.CSV (Nubank) · .PDF (Ailos / Inter)</span>
         </div>
 
         {/* File list */}
         {files.length>0&&(
-          <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,overflow:"hidden",marginBottom:16}}>
-            <div style={{padding:"10px 16px",borderBottom:"1px solid #0f172a",fontSize:10,color:"#334155",letterSpacing:"0.08em"}}>
+          <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,overflow:"hidden",marginBottom:16}}>
+            <div style={{padding:"10px 16px",borderBottom:"1px solid var(--border-muted)",fontSize:10,color:"var(--text-faint)",letterSpacing:"0.08em"}}>
               {files.length} ARQUIVO{files.length>1?"S":""} SELECIONADO{files.length>1?"S":""}
             </div>
             {files.map((f,i)=>{
               const card=guessCard(f.name);
               return (
-                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:i<files.length-1?"1px solid #0a0a14":"none"}}>
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:i<files.length-1?"1px solid var(--border-subtle)":"none"}}>
                   <span style={{fontSize:20}}>{f.name.endsWith(".pdf")?"📄":"📊"}</span>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:11,color:"#94a3b8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
-                    <div style={{fontSize:10,color:"#334155",marginTop:2}}>{(f.size/1024).toFixed(0)} KB</div>
+                    <div style={{fontSize:11,color:"var(--text-muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
+                    <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{(f.size/1024).toFixed(0)} KB</div>
                   </div>
                   <span style={{fontSize:10,padding:"3px 9px",borderRadius:99,background:card.color+"22",color:card.color,border:`1px solid ${card.color}44`,flexShrink:0}}>{card.label}</span>
                   <button onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}
@@ -361,10 +458,10 @@ function UploadScreen({onLoad}) {
             {icon:"🟢",label:"Ailos",   desc:"Fatura PDF",     color:"#00a86b"},
             {icon:"🟠",label:"Inter",   desc:"Fatura PDF",     color:"#ff6b00"},
           ].map(b=>(
-            <div key={b.label} style={{background:"#0c0c18",border:`1px solid ${b.color}22`,borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+            <div key={b.label} style={{background:"var(--bg-card)",border:`1px solid ${b.color}22`,borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
               <div style={{fontSize:16,marginBottom:4}}>{b.icon}</div>
               <div style={{fontSize:11,color:b.color,fontWeight:600,marginBottom:2}}>{b.label}</div>
-              <div style={{fontSize:9,color:"#334155"}}>{b.desc}</div>
+              <div style={{fontSize:9,color:"var(--text-faint)"}}>{b.desc}</div>
             </div>
           ))}
         </div>
@@ -372,7 +469,7 @@ function UploadScreen({onLoad}) {
         {/* CTA */}
         <button className="tap-target btn-tap"
           onClick={handleProcess} disabled={files.length===0||loading}
-          style={{width:"100%",padding:"16px 0",borderRadius:14,border:"none",background:files.length>0&&!loading?"linear-gradient(135deg,#4f46e5,#7c3aed)":"#0f172a",color:files.length>0&&!loading?"#fff":"#1e293b",fontSize:14,cursor:files.length>0&&!loading?"pointer":"not-allowed",letterSpacing:"0.04em"}}>
+          style={{width:"100%",padding:"16px 0",borderRadius:14,border:"none",background:files.length>0&&!loading?"linear-gradient(135deg,#4f46e5,#7c3aed)":"var(--bg-input)",color:files.length>0&&!loading?"#fff":"var(--text-ghost)",fontSize:14,cursor:files.length>0&&!loading?"pointer":"not-allowed",letterSpacing:"0.04em"}}>
           {loading?(
             <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
               <span style={{width:14,height:14,border:"2px solid #ffffff33",borderTopColor:"#fff",borderRadius:"50%",display:"inline-block",animation:"spin .7s linear infinite"}}/>
@@ -381,7 +478,7 @@ function UploadScreen({onLoad}) {
           ):files.length===0?"Selecione ao menos um arquivo":`Analisar ${files.length} arquivo${files.length>1?"s":""} →`}
         </button>
 
-        <p style={{textAlign:"center",color:"#1e293b",fontSize:10,marginTop:14}}>
+        <p style={{textAlign:"center",color:"var(--text-ghost)",fontSize:10,marginTop:14}}>
           🔒 100% local · seus dados não saem do dispositivo
         </p>
       </div>
@@ -400,7 +497,7 @@ function FilterDrawer({open,onClose,cards,months,allCats,selectedCard,selectedMo
         <div className="drawer-handle"/>
         <div style={{padding:"0 20px 20px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <span style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:700,color:"#f1f5f9"}}>Filtros</span>
+            <span style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>Filtros</span>
             {hasFilter&&(
               <button onClick={()=>{setSearch("");setSelectedCard("all");setSelectedMonth("all");setCategoryFilter("all");}}
                 style={{background:"#ef444420",border:"1px solid #ef444440",color:"#ef4444",borderRadius:8,padding:"5px 10px",fontSize:11,cursor:"pointer"}}>
@@ -411,19 +508,19 @@ function FilterDrawer({open,onClose,cards,months,allCats,selectedCard,selectedMo
 
           {/* Search */}
           <div style={{marginBottom:20}}>
-            <div style={{fontSize:10,color:"#334155",letterSpacing:"0.08em",marginBottom:8}}>BUSCAR</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:"0.08em",marginBottom:8}}>BUSCAR</div>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nome do estabelecimento…"
-              style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"1px solid #1e293b",background:"#0f172a",color:"#e2e8f0",fontSize:13}}/>
+              style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13}}/>
           </div>
 
           {/* Cards */}
           <div style={{marginBottom:20}}>
-            <div style={{fontSize:10,color:"#334155",letterSpacing:"0.08em",marginBottom:8}}>CARTÃO</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:"0.08em",marginBottom:8}}>CARTÃO</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {cards.map(c=>(
                 <button key={c} className="tap-target"
                   onClick={()=>setSelectedCard(c)}
-                  style={{padding:"8px 14px",borderRadius:99,border:`1px solid ${selectedCard===c?"#4f46e5":"#1e293b"}`,background:selectedCard===c?"#4f46e522":"#0f172a",color:selectedCard===c?"#818cf8":"#475569",fontSize:12,cursor:"pointer"}}>
+                  style={{padding:"8px 14px",borderRadius:99,border:`1px solid ${selectedCard===c?"#4f46e5":"var(--border-med)"}`,background:selectedCard===c?"#4f46e522":"var(--bg-input)",color:selectedCard===c?"#818cf8":"var(--text-dim)",fontSize:12,cursor:"pointer"}}>
                   {c==="all"?"Todos":c}
                 </button>
               ))}
@@ -432,7 +529,7 @@ function FilterDrawer({open,onClose,cards,months,allCats,selectedCard,selectedMo
 
           {/* Months */}
           <div style={{marginBottom:20}}>
-            <div style={{fontSize:10,color:"#334155",letterSpacing:"0.08em",marginBottom:8}}>MÊS</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:"0.08em",marginBottom:8}}>MÊS</div>
             <div className="chip-scroll">
               {months.map(m=>(
                 <button key={m} className={`chip tap-target${selectedMonth===m?" active":""}`} onClick={()=>setSelectedMonth(m)}>
@@ -444,14 +541,14 @@ function FilterDrawer({open,onClose,cards,months,allCats,selectedCard,selectedMo
 
           {/* Categories */}
           <div style={{marginBottom:8}}>
-            <div style={{fontSize:10,color:"#334155",letterSpacing:"0.08em",marginBottom:8}}>CATEGORIA</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:"0.08em",marginBottom:8}}>CATEGORIA</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
               {allCats.map(c=>{
                 const color=CAT_COLORS[c]||"#6b7280";
                 return (
                   <button key={c} className="tap-target"
                     onClick={()=>setCategoryFilter(c)}
-                    style={{display:"flex",alignItems:"center",gap:7,padding:"9px 12px",borderRadius:10,border:`1px solid ${categoryFilter===c?color+"66":"#1e293b"}`,background:categoryFilter===c?color+"18":"#0f172a",color:categoryFilter===c?color:"#475569",fontSize:11,cursor:"pointer",textAlign:"left"}}>
+                    style={{display:"flex",alignItems:"center",gap:7,padding:"9px 12px",borderRadius:10,border:`1px solid ${categoryFilter===c?color+"66":"var(--border-med)"}`,background:categoryFilter===c?color+"18":"var(--bg-input)",color:categoryFilter===c?color:"var(--text-dim)",fontSize:11,cursor:"pointer",textAlign:"left"}}>
                     {c!=="all"&&<div style={{width:7,height:7,borderRadius:1,background:color,flexShrink:0}}/>}
                     <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c==="all"?"Todas":c}</span>
                   </button>
@@ -474,18 +571,18 @@ function FilterDrawer({open,onClose,cards,months,allCats,selectedCard,selectedMo
 function StatCard({icon,label,value,sub,color,onClick}){
   return (
     <div className={`card-tap tap-target`} onClick={onClick}
-      style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:"14px 16px",cursor:onClick?"pointer":"default",transition:"all .15s"}}>
+      style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:"14px 16px",cursor:onClick?"pointer":"default",transition:"all .15s"}}>
       <div style={{fontSize:20,marginBottom:6}}>{icon}</div>
       <div style={{fontSize:17,fontWeight:700,color,fontFamily:"'Syne',sans-serif",lineHeight:1.1}}>{value}</div>
-      <div style={{fontSize:10,color:"#64748b",marginTop:5}}>{label}</div>
-      {sub&&<div style={{fontSize:9,color:"#1e293b",marginTop:2}}>{sub}</div>}
+      <div style={{fontSize:10,color:"var(--text-faint)",marginTop:5}}>{label}</div>
+      {sub&&<div style={{fontSize:9,color:"var(--text-ghost)",marginTop:2}}>{sub}</div>}
     </div>
   );
 }
 
 // ─── OVERVIEW TAB ────────────────────────────
 function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalPay,catBreakdown,topMerchants,cardStats,setCategoryFilter,setSelectedCard,selectedCard,setActiveTab}){
-  const ttStyle={background:"#0f172a",border:"1px solid #1e293b",borderRadius:8,fontSize:10,fontFamily:"'DM Mono',monospace"};
+  const ttStyle={background:"var(--tt-bg)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -507,16 +604,16 @@ function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalP
             return (
               <div key={cs.card} className="card-tap tap-target"
                 onClick={()=>setSelectedCard(isActive?"all":cs.card)}
-                style={{background:`linear-gradient(135deg,${color}18,#0c0c18)`,border:`1px solid ${isActive?color:color+"33"}`,borderRadius:16,padding:"14px 16px",cursor:"pointer"}}>
+                style={{background:`linear-gradient(135deg,${color}18,var(--bg-card))`,border:`1px solid ${isActive?color:color+"33"}`,borderRadius:16,padding:"14px 16px",cursor:"pointer"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                   <div>
                     <div style={{fontSize:12,color,fontFamily:"'Syne',sans-serif",fontWeight:700}}>{cs.card}</div>
-                    <div style={{fontSize:10,color:"#334155",marginTop:2}}>{cs.count} compras</div>
+                    <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{cs.count} compras</div>
                   </div>
-                  <div style={{fontSize:18,fontWeight:800,color:"#f1f5f9",fontFamily:"'Syne',sans-serif"}}>{fmt(cs.total)}</div>
+                  <div style={{fontSize:18,fontWeight:800,color:"var(--text-primary)",fontFamily:"'Syne',sans-serif"}}>{fmt(cs.total)}</div>
                 </div>
                 <div className="prog-bar"><div className="prog-fill" style={{width:`${pct}%`,background:color}}/></div>
-                <div style={{fontSize:9,color:"#334155",marginTop:4}}>{pct.toFixed(1)}% do total</div>
+                <div style={{fontSize:9,color:"var(--text-faint)",marginTop:4}}>{pct.toFixed(1)}% do total</div>
               </div>
             );
           })}
@@ -524,8 +621,8 @@ function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalP
       )}
 
       {/* Category pie + legend */}
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Gastos por Categoria</div>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Gastos por Categoria</div>
         <ResponsiveContainer width="100%" height={180}>
           <PieChart>
             <Pie data={catBreakdown.slice(0,8)} dataKey="value" cx="50%" cy="50%" outerRadius={80} innerRadius={40}>
@@ -542,27 +639,27 @@ function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalP
               <div key={c.name} className="tap-target" onClick={()=>{setCategoryFilter(c.name);setActiveTab("transactions");}}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:8,background:"transparent",cursor:"pointer"}}>
                 <div style={{width:8,height:8,borderRadius:2,background:color,flexShrink:0}}/>
-                <span style={{flex:1,fontSize:11,color:"#94a3b8"}}>{c.name}</span>
-                <span style={{fontSize:10,color:"#334155"}}>{pct}%</span>
-                <span style={{fontSize:11,color:"#f1f5f9",fontWeight:500,minWidth:70,textAlign:"right"}}>{fmt(c.value)}</span>
+                <span style={{flex:1,fontSize:11,color:"var(--text-muted)"}}>{c.name}</span>
+                <span style={{fontSize:10,color:"var(--text-faint)"}}>{pct}%</span>
+                <span style={{fontSize:11,color:"var(--text-primary)",fontWeight:500,minWidth:70,textAlign:"right"}}>{fmt(c.value)}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Top 5 merchants (horizontal bars, mobile-friendly) */}
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Top Estabelecimentos</div>
-        {topMerchants.length===0&&<div style={{fontSize:12,color:"#334155",textAlign:"center",padding:20}}>Sem dados</div>}
+      {/* Top 5 merchants */}
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Top Estabelecimentos</div>
+        {topMerchants.length===0&&<div style={{fontSize:12,color:"var(--text-faint)",textAlign:"center",padding:20}}>Sem dados</div>}
         {topMerchants.slice(0,5).map((m,i)=>{
           const maxTotal=topMerchants[0]?.total||1;
           const pct=((m.total/maxTotal)*100).toFixed(0);
           return (
             <div key={m.name} style={{marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:11,color:"#94a3b8",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingRight:8}}>{m.name}</span>
-                <span style={{fontSize:11,color:"#f1f5f9",flexShrink:0}}>{fmt(m.total)}</span>
+                <span style={{fontSize:11,color:"var(--text-muted)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingRight:8}}>{m.name}</span>
+                <span style={{fontSize:11,color:"var(--text-primary)",flexShrink:0}}>{fmt(m.total)}</span>
               </div>
               <div className="prog-bar"><div className="prog-fill" style={{width:`${pct}%`,background:`hsl(${205+i*18},65%,${55-i*3}%)`}}/></div>
             </div>
@@ -571,9 +668,9 @@ function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalP
       </div>
 
       {/* Recent transactions */}
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,overflow:"hidden"}}>
-        <div style={{padding:"14px 16px",borderBottom:"1px solid #0a0a14",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:12,fontWeight:600,color:"#f1f5f9",fontFamily:"'Syne',sans-serif"}}>Últimas Transações</span>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,overflow:"hidden"}}>
+        <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border-subtle)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",fontFamily:"'Syne',sans-serif"}}>Últimas Transações</span>
           <button className="tap-target" onClick={()=>setActiveTab("transactions")}
             style={{fontSize:11,color:"#818cf8",background:"none",border:"none",cursor:"pointer"}}>ver todas →</button>
         </div>
@@ -583,10 +680,10 @@ function OverviewTab({filtered,transactions,expenses,totalExp,totalCharge,totalP
               <div style={{width:8,height:8,borderRadius:2,background:CAT_COLORS[t.category]||"#6b7280"}}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,color:"#cbd5e1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
-              <div style={{fontSize:10,color:"#334155",marginTop:2}}>{t.date} · <span style={{color:CARD_COLORS[t.card]||"#64748b"}}>{t.card}</span></div>
+              <div style={{fontSize:12,color:"var(--text-sec)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+              <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{t.date} · <span style={{color:CARD_COLORS[t.card]||"#64748b"}}>{t.card}</span></div>
             </div>
-            <div style={{fontSize:13,fontWeight:600,color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"#f1f5f9",flexShrink:0}}>
+            <div style={{fontSize:13,fontWeight:600,color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"var(--text-primary)",flexShrink:0}}>
               {t.amount<0?"+":""}{fmt(t.amount)}
             </div>
           </div>
@@ -604,7 +701,7 @@ function TransactionsTab({filtered,sortBy,sortDir,toggleSort}){
     <div style={{display:"flex",flexDirection:"column",gap:0}}>
       {/* Sort pills */}
       <div style={{padding:"0 0 12px"}}>
-        <div style={{fontSize:10,color:"#334155",marginBottom:8,letterSpacing:"0.06em"}}>ORDENAR POR</div>
+        <div style={{fontSize:10,color:"var(--text-faint)",marginBottom:8,letterSpacing:"0.06em"}}>ORDENAR POR</div>
         <div className="chip-scroll">
           {[["date","Data"],["amount","Valor"],["card","Cartão"],["title","Nome"]].map(([f,l])=>(
             <button key={f} className={`chip tap-target${sortBy===f?" active":""}`} onClick={()=>toggleSort(f)}>
@@ -615,30 +712,30 @@ function TransactionsTab({filtered,sortBy,sortDir,toggleSort}){
       </div>
 
       {/* Summary */}
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:10,color:"#334155"}}>{filtered.length} transações · {expenses.length} gastos</span>
-        <span style={{fontSize:12,fontWeight:600,color:"#f1f5f9"}}>Total: {fmt(total)}</span>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:10,color:"var(--text-faint)"}}>{filtered.length} transações · {expenses.length} gastos</span>
+        <span style={{fontSize:12,fontWeight:600,color:"var(--text-primary)"}}>Total: {fmt(total)}</span>
       </div>
 
       {/* Transaction list */}
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,overflow:"hidden"}}>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,overflow:"hidden"}}>
         {filtered.length===0&&(
-          <div style={{padding:40,textAlign:"center",color:"#334155",fontSize:13}}>Nenhuma transação encontrada</div>
+          <div style={{padding:40,textAlign:"center",color:"var(--text-faint)",fontSize:13}}>Nenhuma transação encontrada</div>
         )}
         {filtered.map((t,i)=>(
-          <div key={i} className="txn-card" style={{borderBottom:i<filtered.length-1?"1px solid #0a0a14":"none",background:i%2===0?"#0c0c18":"#0d0d1a"}}>
+          <div key={i} className="txn-card" style={{borderBottom:i<filtered.length-1?"1px solid var(--border-subtle)":"none",background:i%2===0?"var(--bg-card)":"var(--bg-card-alt)"}}>
             <div style={{width:36,height:36,borderRadius:10,background:(CAT_COLORS[t.category]||"#6b7280")+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <div style={{width:10,height:10,borderRadius:2,background:CAT_COLORS[t.category]||"#6b7280"}}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,color:"#cbd5e1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:3}}>{t.title}</div>
+              <div style={{fontSize:12,color:"var(--text-sec)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:3}}>{t.title}</div>
               <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={{fontSize:9,color:"#334155"}}>{t.date}</span>
+                <span style={{fontSize:9,color:"var(--text-faint)"}}>{t.date}</span>
                 <span style={{fontSize:9,color:CARD_COLORS[t.card]||"#64748b"}}>{t.card}</span>
-                <span style={{fontSize:9,color:"#1e293b"}}>{t.category}</span>
+                <span style={{fontSize:9,color:"var(--text-ghost)"}}>{t.category}</span>
               </div>
             </div>
-            <div style={{fontSize:13,fontWeight:600,color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"#f1f5f9",flexShrink:0,textAlign:"right"}}>
+            <div style={{fontSize:13,fontWeight:600,color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"var(--text-primary)",flexShrink:0,textAlign:"right"}}>
               {t.amount<0?"+":""}{fmt(t.amount)}
             </div>
           </div>
@@ -651,7 +748,7 @@ function TransactionsTab({filtered,sortBy,sortDir,toggleSort}){
 // ─── CATEGORIES TAB ──────────────────────────
 function CategoriesTab({catBreakdown,expenses,totalExp,setCategoryFilter,setActiveTab}){
   if(catBreakdown.length===0) return (
-    <div style={{textAlign:"center",padding:"60px 20px",color:"#334155",fontSize:13}}>
+    <div style={{textAlign:"center",padding:"60px 20px",color:"var(--text-faint)",fontSize:13}}>
       Nenhuma categoria encontrada com os filtros atuais.
     </div>
   );
@@ -664,19 +761,19 @@ function CategoriesTab({catBreakdown,expenses,totalExp,setCategoryFilter,setActi
         return (
           <div key={cat.name} className="card-tap tap-target"
             onClick={()=>{setCategoryFilter(cat.name);setActiveTab("transactions");}}
-            style={{background:"#0c0c18",border:`1px solid ${color}22`,borderRadius:16,padding:"14px 16px",cursor:"pointer"}}>
+            style={{background:"var(--bg-card)",border:`1px solid ${color}22`,borderRadius:16,padding:"14px 16px",cursor:"pointer"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <div style={{width:10,height:10,borderRadius:2,background:color,flexShrink:0}}/>
-                <span style={{fontSize:13,fontWeight:600,color:"#f1f5f9",fontFamily:"'Syne',sans-serif"}}>{cat.name}</span>
+                <span style={{fontSize:13,fontWeight:600,color:"var(--text-primary)",fontFamily:"'Syne',sans-serif"}}>{cat.name}</span>
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:14,fontWeight:700,color,fontFamily:"'Syne',sans-serif"}}>{fmt(cat.value)}</div>
-                <div style={{fontSize:9,color:"#334155"}}>{pct}% · {catTxns.length} itens</div>
+                <div style={{fontSize:9,color:"var(--text-faint)"}}>{pct}% · {catTxns.length} itens</div>
               </div>
             </div>
             <div className="prog-bar"><div className="prog-fill" style={{width:`${pct}%`,background:color}}/></div>
-            <div style={{fontSize:10,color:"#334155",marginTop:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               Maior: {catTxns.sort((a,b)=>b.amount-a.amount)[0]?.title.slice(0,40)||"—"}
             </div>
           </div>
@@ -688,19 +785,19 @@ function CategoriesTab({catBreakdown,expenses,totalExp,setCategoryFilter,setActi
 
 // ─── TRENDS TAB ──────────────────────────────
 function TrendsTab({filtered,monthlyTrend,catBreakdown,uniqueCards}){
-  const ttStyle={background:"#0f172a",border:"1px solid #1e293b",borderRadius:8,fontSize:10,fontFamily:"'DM Mono',monospace"};
+  const ttStyle={background:"var(--tt-bg)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:10,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const encargos=filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0);
   const totalEnc=encargos.reduce((s,t)=>s+t.amount,0);
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Gastos por Cartão / Mês</div>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Gastos por Cartão / Mês</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={monthlyTrend} margin={{left:-10,right:4}}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#0a0a14"/>
-            <XAxis dataKey="month" tick={{fontSize:9,fill:"#334155"}}/>
-            <YAxis tick={{fontSize:9,fill:"#334155"}} tickFormatter={fmtShort} width={46}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
+            <XAxis dataKey="month" tick={{fontSize:9,fill:"var(--text-faint)"}}/>
+            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={46}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
             <Legend wrapperStyle={{fontSize:10}}/>
             {uniqueCards.map(c=><Bar key={c} dataKey={c} fill={CARD_COLORS[c]||"#818cf8"} radius={[3,3,0,0]}/>)}
@@ -708,26 +805,26 @@ function TrendsTab({filtered,monthlyTrend,catBreakdown,uniqueCards}){
         </ResponsiveContainer>
       </div>
 
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Evolução Total</div>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Evolução Total</div>
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={monthlyTrend} margin={{left:-10,right:4}}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#0a0a14"/>
-            <XAxis dataKey="month" tick={{fontSize:9,fill:"#334155"}}/>
-            <YAxis tick={{fontSize:9,fill:"#334155"}} tickFormatter={fmtShort} width={46}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
+            <XAxis dataKey="month" tick={{fontSize:9,fill:"var(--text-faint)"}}/>
+            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={46}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
             <Line type="monotone" dataKey="total" stroke="#818cf8" strokeWidth={2} dot={{fill:"#818cf8",r:4}}/>
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div style={{background:"#0c0c18",border:"1px solid #0f172a",borderRadius:16,padding:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Top Categorias</div>
+      <div style={{background:"var(--bg-card)",border:"1px solid var(--border-muted)",borderRadius:16,padding:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:14,fontFamily:"'Syne',sans-serif"}}>Top Categorias</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={catBreakdown.slice(0,7)} margin={{left:-10,right:4}}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#0a0a14"/>
-            <XAxis dataKey="name" tick={{fontSize:8,fill:"#334155"}} angle={-30} textAnchor="end" height={50}/>
-            <YAxis tick={{fontSize:9,fill:"#334155"}} tickFormatter={fmtShort} width={46}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
+            <XAxis dataKey="name" tick={{fontSize:8,fill:"var(--text-faint)"}} angle={-30} textAnchor="end" height={50}/>
+            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={46}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
             <Bar dataKey="value" radius={[4,4,0,0]}>
               {catBreakdown.slice(0,7).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}
@@ -737,16 +834,16 @@ function TrendsTab({filtered,monthlyTrend,catBreakdown,uniqueCards}){
       </div>
 
       {encargos.length>0&&(
-        <div style={{background:"#0c0c18",border:"1px solid #ef444430",borderRadius:16,padding:16}}>
+        <div style={{background:"var(--bg-card)",border:"1px solid #ef444430",borderRadius:16,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <span style={{fontSize:12,fontWeight:600,color:"#ef4444",fontFamily:"'Syne',sans-serif"}}>⚠️ Encargos Detectados</span>
             <span style={{fontSize:14,fontWeight:800,color:"#ef4444",fontFamily:"'Syne',sans-serif"}}>{fmt(totalEnc)}</span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {encargos.map((t,i)=>(
-              <div key={i} style={{background:"#0f172a",borderRadius:10,padding:"10px 14px",borderLeft:"3px solid #ef4444"}}>
-                <div style={{fontSize:9,color:"#334155",marginBottom:3}}>{t.date} · {t.card}</div>
-                <div style={{fontSize:11,color:"#e2e8f0",marginBottom:4}}>{t.title}</div>
+              <div key={i} style={{background:"var(--bg-input)",borderRadius:10,padding:"10px 14px",borderLeft:"3px solid #ef4444"}}>
+                <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:3}}>{t.date} · {t.card}</div>
+                <div style={{fontSize:11,color:"var(--text-sec)",marginBottom:4}}>{t.title}</div>
                 <div style={{fontSize:14,fontWeight:700,color:"#ef4444"}}>{fmt(t.amount)}</div>
               </div>
             ))}
@@ -758,7 +855,7 @@ function TrendsTab({filtered,monthlyTrend,catBreakdown,uniqueCards}){
 }
 
 // ─── DASHBOARD ───────────────────────────────
-function Dashboard({transactions,fileNames,onReset}){
+function Dashboard({transactions,fileNames,onReset,dark,toggleTheme}){
   const [activeTab,      setActiveTab]      = useState("overview");
   const [selectedCard,   setSelectedCard]   = useState("all");
   const [selectedMonth,  setSelectedMonth]  = useState("all");
@@ -852,27 +949,27 @@ function Dashboard({transactions,fileNames,onReset}){
   ];
 
   return (
-    <div style={{fontFamily:"'DM Mono',monospace",background:"#080810",minHeight:"100dvh",color:"#e2e8f0",
-      paddingBottom:`calc(70px + env(safe-area-inset-bottom,0px))`}}>
+    <div style={{fontFamily:"'DM Mono',monospace",background:"var(--bg-root)",minHeight:"100dvh",color:"var(--text-primary)",
+      paddingBottom:`calc(70px + env(safe-area-inset-bottom,0px))`,transition:"background .25s,color .25s"}}>
 
       {/* Top header */}
-      <div style={{background:"#0a0a14",borderBottom:"1px solid #0f172a",padding:"12px 16px",
+      <div style={{background:"var(--bg-base)",borderBottom:"1px solid var(--border-muted)",padding:"12px 16px",
         paddingTop:`calc(12px + env(safe-area-inset-top,0px))`,
-        position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        position:"sticky",top:0,zIndex:100,transition:"background .25s,border-color .25s"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:"#f1f5f9",letterSpacing:"-0.02em"}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:"var(--text-primary)",letterSpacing:"-0.02em"}}>
               💳 Dashboard
             </div>
-            <div style={{fontSize:9,color:"#1e293b",marginTop:1}}>{transactions.length} transações · {fileNames.length} arquivo{fileNames.length>1?"s":""}</div>
+            <div style={{fontSize:9,color:"var(--text-ghost)",marginTop:1}}>{transactions.length} transações · {fileNames.length} arquivo{fileNames.length>1?"s":""}</div>
           </div>
 
           {/* Filter button */}
           <button className="tap-target" onClick={()=>setFilterOpen(true)}
             style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",borderRadius:10,
-              border:`1px solid ${hasFilter?"#4f46e5":"#1e293b"}`,
+              border:`1px solid ${hasFilter?"#4f46e5":"var(--border-med)"}`,
               background:hasFilter?"#4f46e522":"transparent",
-              color:hasFilter?"#818cf8":"#475569",fontSize:12,cursor:"pointer"}}>
+              color:hasFilter?"#818cf8":"var(--text-dim)",fontSize:12,cursor:"pointer"}}>
             <span>⚙️</span>
             <span>{hasFilter?"Filtros ativos":"Filtrar"}</span>
             {hasFilter&&<span style={{background:"#818cf8",color:"#fff",borderRadius:99,fontSize:9,padding:"1px 5px",lineHeight:1.4}}>
@@ -880,9 +977,12 @@ function Dashboard({transactions,fileNames,onReset}){
             </span>}
           </button>
 
+          {/* Theme toggle */}
+          <ThemeToggleBtn dark={dark} toggle={toggleTheme}/>
+
           {/* Reset */}
           <button className="tap-target" onClick={onReset}
-            style={{padding:"8px",borderRadius:10,border:"1px solid #1e293b",background:"transparent",color:"#334155",fontSize:14,cursor:"pointer",lineHeight:1}}>
+            style={{padding:"8px",borderRadius:10,border:"1px solid var(--border-med)",background:"transparent",color:"var(--text-faint)",fontSize:14,cursor:"pointer",lineHeight:1}}>
             ⬆️
           </button>
         </div>
@@ -948,6 +1048,7 @@ function Dashboard({transactions,fileNames,onReset}){
 function App(){
   const [transactions,setTransactions]=useState(null);
   const [fileNames,setFileNames]=useState([]);
+  const [dark, toggleTheme] = useTheme();
 
   const handleLoad=(txns,names)=>{
     if(!txns||txns.length===0){
@@ -959,8 +1060,9 @@ function App(){
   };
 
   if(!transactions)
-    return <UploadScreen onLoad={handleLoad}/>;
+    return <UploadScreen onLoad={handleLoad} dark={dark} toggleTheme={toggleTheme}/>;
   return <Dashboard transactions={transactions} fileNames={fileNames}
+    dark={dark} toggleTheme={toggleTheme}
     onReset={()=>{setTransactions(null);setFileNames([]);}} />;
 }
 
