@@ -136,9 +136,10 @@ async function parsePDF(file, personName) {
 }
 
 async function processFile(file, personName) {
-  if(file.name.toLowerCase().endsWith(".csv")){const text=await file.text();return parseCSV(text,file.name,personName);}
-  if(file.name.toLowerCase().endsWith(".pdf")) return parsePDF(file,personName);
-  return [];
+  let txns=[];
+  if(file.name.toLowerCase().endsWith(".csv")){const text=await file.text();txns=parseCSV(text,file.name,personName);}
+  else if(file.name.toLowerCase().endsWith(".pdf")) txns=await parsePDF(file,personName);
+  return txns.filter(t=>!t.title.toLowerCase().includes("saldo em atraso"));
 }
 
 // ─── CACHE  ───────────────────────────────────
@@ -159,7 +160,7 @@ function savePeople(people) {
   try {
     const payload=JSON.stringify({people,updatedAt:Date.now()});
     if(payload.length>CACHE_LIMIT) return {ok:false,reason:"big"};
-    localStorage.setItem(CACHE_KEY,payload);
+    localStorage.setItem("fin-dash-v2",payload);
     return {ok:true};
   } catch(e){ return {ok:false,reason:"error"}; }
 }
@@ -168,6 +169,21 @@ function addOrReplacePerson(person) {
   const people=loadPeople();
   const idx=people.findIndex(p=>p.name.toLowerCase()===person.name.toLowerCase());
   if(idx>=0) people[idx]=person; else people.push(person);
+  return savePeople(people);
+}
+
+function mergePersonFiles(name, newTransactions, newFileNames) {
+  const people=loadPeople();
+  const idx=people.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+  if(idx<0) return {ok:false,reason:"not_found"};
+  const existing=people[idx];
+  // Deduplicate by date+title+amount
+  const existingKeys=new Set(existing.transactions.map(t=>`${t.date}|${t.title}|${t.amount}`));
+  const unique=newTransactions.filter(t=>!existingKeys.has(`${t.date}|${t.title}|${t.amount}`));
+  existing.transactions=[...existing.transactions,...unique];
+  existing.fileNames=[...new Set([...(existing.fileNames||[]),...newFileNames])];
+  existing.savedAt=Date.now();
+  people[idx]=existing;
   return savePeople(people);
 }
 
@@ -201,7 +217,7 @@ function PersonAvatar({ name, color, size=36, fontSize=13 }) {
 // ═══════════════════════════════════════════════
 //  HOME SCREEN
 // ═══════════════════════════════════════════════
-function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, dark, toggleTheme }) {
+function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAddFiles, dark, toggleTheme }) {
   const canJoin = people.length >= 2;
 
   const stats = people.map(p => {
@@ -247,6 +263,10 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, dark
                       style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${p.color}60`,background:p.color+"18",color:p.color,fontSize:11,cursor:"pointer",fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap"}}>
                       Ver só {p.name.split(" ")[0]} →
                     </button>
+                    <button className="tap-btn" onClick={()=>onAddFiles(p.name)}
+                      style={{padding:"6px 14px",borderRadius:8,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:10,cursor:"pointer",fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap"}}>
+                      📁 Adicionar arquivos
+                    </button>
                     <button className="tap-btn" onClick={()=>{if(window.confirm(`Remover os dados de ${p.name}?`))onRemovePerson(p.name);}}
                       style={{padding:"6px 14px",borderRadius:8,border:"1px solid #ef444430",background:"#ef444408",color:"#ef4444",fontSize:10,cursor:"pointer",fontFamily:"'DM Mono',monospace"}}>
                       🗑️ Remover
@@ -274,6 +294,116 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, dark
           + Adicionar {people.length===0?"pessoa":"outra pessoa"}
         </button>
 
+        <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+//  ADD FILES SCREEN — add more files to existing person
+// ═══════════════════════════════════════════════
+function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
+  const [files,    setFiles]    = useState([]);
+  const [loading,  setLoading]  = useState(false);
+  const [progress, setProgress] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef();
+
+  const addFiles = raw => {
+    const valid=Array.from(raw).filter(f=>f.name.endsWith(".csv")||f.name.endsWith(".pdf"));
+    setFiles(prev=>{const names=new Set(prev.map(f=>f.name));return [...prev,...valid.filter(f=>!names.has(f.name))];});
+  };
+  const handleDrop = e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
+
+  const handleProcess = async () => {
+    if(!files.length) return;
+    setLoading(true);
+    const all=[];
+    for(const file of files){setProgress(`Lendo ${file.name}…`);try{all.push(...(await processFile(file,person.name)));}catch(e){console.error(e);}}
+    setLoading(false); setProgress("");
+    if(!all.length){alert("Nenhuma transação encontrada nos novos arquivos.");return;}
+    onMerge(person.name, all, files.map(f=>f.name));
+  };
+
+  const guessCard = n => {
+    const l=n.toLowerCase();
+    if(l.includes("nubank")) return {label:"Nubank",color:"#8c52ff"};
+    if(l.includes("inter"))  return {label:"Inter", color:"#ff6b00"};
+    if(l.includes("fatura_")||l.includes("ailos")) return {label:"Ailos",color:"#00a86b"};
+    return {label:"PDF/CSV",color:"#64748b"};
+  };
+
+  return (
+    <div className="upload-screen">
+      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
+        <button className="dh-icon-btn tap" onClick={onBack}>←</button>
+        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
+      </div>
+
+      <div className="upload-inner anim-fade-up">
+        {/* Person badge */}
+        <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${person.color}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
+          <PersonAvatar name={person.name} color={person.color} size={40} fontSize={15}/>
+          <div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:person.color}}>{person.name}</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{person.transactions.length} transações carregadas</div>
+          </div>
+        </div>
+
+        {/* Existing files */}
+        {person.fileNames&&person.fileNames.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>ARQUIVOS JÁ CARREGADOS</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {person.fileNames.map((fn,i)=>{
+                const card=guessCard(fn);
+                return (
+                  <span key={i} style={{fontSize:9,padding:"3px 8px",borderRadius:6,background:card.color+"15",color:card.color,border:`1px solid ${card.color}30`,fontFamily:"'DM Mono',monospace"}}>{fn}</span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="upload-header" style={{marginBottom:20}}>
+          <span className="upload-emoji">📁</span>
+          <div className="upload-title">Adicionar arquivos</div>
+          <div className="upload-sub">Selecione novos arquivos para {person.name}</div>
+        </div>
+
+        <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
+        <div className={`upload-drop-zone tap${dragOver?" drag-over":""}`}
+          onClick={()=>inputRef.current?.click()}
+          onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+          onDragLeave={()=>setDragOver(false)}
+          onDrop={handleDrop}>
+          <span className="upload-drop-icon">{dragOver?"📂":"📁"}</span>
+          <span className="upload-drop-text">Selecionar ou soltar arquivos</span>
+          <span className="upload-drop-hint">.CSV (Nubank) · .PDF (Ailos / Inter)</span>
+        </div>
+
+        {files.length>0&&(
+          <div className="upload-file-list">
+            <div className="ufl-header">{files.length} NOVO{files.length>1?"S":""} ARQUIVO{files.length>1?"S":""}</div>
+            {files.map((f,i)=>{
+              const card=guessCard(f.name);
+              return (
+                <div key={i} className="ufl-item">
+                  <span className="ufl-icon">{f.name.endsWith(".pdf")?"📄":"📊"}</span>
+                  <div className="ufl-meta"><div className="ufl-name">{f.name}</div><div className="ufl-size">{(f.size/1024).toFixed(0)} KB</div></div>
+                  <span className="ufl-tag" style={{background:card.color+"20",color:card.color,borderColor:card.color+"50"}}>{card.label}</span>
+                  <button className="ufl-del tap" onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button className={`upload-cta tap-btn${files.length>0&&!loading?" ready":" disabled"}`} onClick={handleProcess} disabled={files.length===0||loading}>
+          {loading?(<><span className="spinner"/><span className="anim-pulse">{progress||"Processando…"}</span></>):
+            files.length===0?"Selecione ao menos um arquivo":`Adicionar ${files.length} arquivo${files.length>1?"s":""} a ${person.name} →`}
+        </button>
         <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
       </div>
     </div>
@@ -1209,6 +1339,7 @@ function App() {
   const [screen,       setScreen]       = useState("home");
   const [people,       setPeople]       = useState(()=>loadPeople());
   const [activePeople, setActivePeople] = useState([]);
+  const [addFilesPerson, setAddFilesPerson] = useState(null);
 
   const handleOpenDashboard = names => {
     const selected=people.filter(p=>names.includes(p.name));
@@ -1230,6 +1361,20 @@ function App() {
     setPeople(updated);
   };
 
+  const handleAddFiles = name => {
+    const person=people.find(p=>p.name===name);
+    if(person){setAddFilesPerson(person);setScreen("add-files");}
+  };
+
+  const handleMergeFiles = (name, newTransactions, newFileNames) => {
+    const result=mergePersonFiles(name, newTransactions, newFileNames);
+    if(!result.ok&&result.reason==="big")
+      alert("⚠️ Dados grandes demais para cache. Os dados serão usados nesta sessão mas não ficarão salvos.");
+    setPeople(loadPeople());
+    setAddFilesPerson(null);
+    setScreen("home");
+  };
+
   const handleReset = () => {
     setPeople(loadPeople());
     setActivePeople([]);
@@ -1240,12 +1385,16 @@ function App() {
     <UploadScreen existingPeople={people} onLoad={handlePersonLoaded} onBack={()=>setScreen("home")} dark={dark} toggleTheme={toggleTheme}/>
   );
 
+  if(screen==="add-files"&&addFilesPerson) return (
+    <AddFilesScreen person={addFilesPerson} onMerge={handleMergeFiles} onBack={()=>{setAddFilesPerson(null);setScreen("home");}} dark={dark} toggleTheme={toggleTheme}/>
+  );
+
   if(screen==="dashboard"&&activePeople.length>0) return (
     <Dashboard activePeople={activePeople} dark={dark} toggleTheme={toggleTheme} onReset={handleReset}/>
   );
 
   return (
-    <HomeScreen people={people} onOpenDashboard={handleOpenDashboard} onAddPerson={()=>setScreen("upload")} onRemovePerson={handleRemovePerson} dark={dark} toggleTheme={toggleTheme}/>
+    <HomeScreen people={people} onOpenDashboard={handleOpenDashboard} onAddPerson={()=>setScreen("upload")} onRemovePerson={handleRemovePerson} onAddFiles={handleAddFiles} dark={dark} toggleTheme={toggleTheme}/>
   );
 }
 
