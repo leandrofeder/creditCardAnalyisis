@@ -40,9 +40,10 @@ const CAT_COLORS = {
   "Supermercado":"#22c55e","Gastronomia":"#f97316","Transporte":"#3b82f6",
   "Tecnologia/Assinaturas":"#8b5cf6","Compras Online":"#06b6d4","Gasolina":"#eab308",
   "Saúde":"#ec4899","Padaria/Alimentação":"#a78bfa","Academia/Saúde":"#14b8a6",
-  "Cafés/Pequenos":"#fb923c","Parcelamentos":"#64748b","Encargos/Juros":"#ef4444",
-  "Pagamento":"#10b981","Estacionamento":"#94a3b8","Presentes/Bazar":"#f43f5e",
-  "Educação":"#0ea5e9","Telecomunicações":"#38bdf8","Seguros":"#d97706","Outros":"#6b7280",
+  "Cafés/Pequenos":"#fb923c","Conveniência":"#c026d3","Parcelamentos":"#64748b",
+  "Encargos/Juros":"#ef4444","Pagamento":"#10b981","Estacionamento":"#94a3b8",
+  "Presentes/Bazar":"#f43f5e","Educação":"#0ea5e9","Telecomunicações":"#38bdf8",
+  "Seguros":"#d97706","Outros":"#6b7280",
 };
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
@@ -60,6 +61,7 @@ function categorize(title) {
   if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("baitah")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")||t.includes("ifood")||t.includes("rappi")||t.includes("delivery")) return "Gastronomia";
   if(t.includes("padaria")||t.includes("panificadora")||t.includes("girassol")||t.includes("royale")||t.includes("dona norma")) return "Padaria/Alimentação";
   if(t.includes("cafe vending")||t.includes("aromapress")||t.includes("raiden")||t.includes("cappta")||t.includes("starbucks")||t.includes("cafe")) return "Cafés/Pequenos";
+  if(t.includes("convenienc")||t.includes("conveni")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
   if(t.includes("pagamento recebido")||t.includes("pagamento efetuado")) return "Pagamento";
   if(t.includes("parcela")||t.includes("siapi")||t.includes("panasonic")||t.includes("prata fina")||t.includes("isabela")||t.includes("s v comercio")) return "Parcelamentos";
   if(t.includes("juros")||t.includes("multa")||t.includes("iof")||t.includes("saldo em")||t.includes("rotativo")||t.includes("mora")) return "Encargos/Juros";
@@ -143,7 +145,6 @@ async function processFile(file, personName) {
 }
 
 // ─── CACHE  ───────────────────────────────────
-// { people: [{ name, color, transactions, fileNames, savedAt }] }
 const CACHE_KEY   = "fin-dash-v2";
 const CACHE_LIMIT = 6 * 1024 * 1024;
 
@@ -177,7 +178,6 @@ function mergePersonFiles(name, newTransactions, newFileNames) {
   const idx=people.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
   if(idx<0) return {ok:false,reason:"not_found"};
   const existing=people[idx];
-  // Deduplicate by date+title+amount
   const existingKeys=new Set(existing.transactions.map(t=>`${t.date}|${t.title}|${t.amount}`));
   const unique=newTransactions.filter(t=>!existingKeys.has(`${t.date}|${t.title}|${t.amount}`));
   existing.transactions=[...existing.transactions,...unique];
@@ -214,6 +214,70 @@ function PersonAvatar({ name, color, size=36, fontSize=13 }) {
   );
 }
 
+// ─── TRANSACTION ITEM ─────────────────────────
+function TransactionItem({ t, activePeople, onDelete, onEditCategory, striped, idx }) {
+  const [editingCat, setEditingCat] = useState(false);
+  const color     = CAT_COLORS[t.category] || "#6b7280";
+  const cardColor = CARD_COLORS[t.card]    || "#64748b";
+  const pColor    = activePeople.find(p => p.name === t.person)?.color;
+
+  const handleDelete = e => {
+    e.stopPropagation();
+    if (window.confirm(`Remover "${t.title.slice(0,50)}"?`)) {
+      onDelete && onDelete(t.person, t.date, t.title, t.amount);
+    }
+  };
+
+  const handleCatChange = e => {
+    e.stopPropagation();
+    onEditCategory && onEditCategory(t.person, t.date, t.title, t.amount, e.target.value);
+    setEditingCat(false);
+  };
+
+  return (
+    <div className="txn-item tap" style={striped && idx%2!==0 ? {background:"var(--bg-card-hover)"} : {}}>
+      <div className="txn-icon" style={{background:color+"20"}}>
+        <div className="txn-icon-dot" style={{background:color}}/>
+      </div>
+      <div className="txn-meta">
+        <div className="txn-title">{t.title}</div>
+        <div className="txn-info">
+          <span>{fmtDate(t.date)}</span>
+          <span className="txn-card-badge" style={{background:cardColor+"20",color:cardColor}}>{t.card}</span>
+          {editingCat ? (
+            <select
+              className="cat-inline-select"
+              value={t.category}
+              autoFocus
+              onChange={handleCatChange}
+              onBlur={() => setEditingCat(false)}
+              onClick={e => e.stopPropagation()}
+            >
+              {Object.keys(CAT_COLORS).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          ) : (
+            <span
+              className="txn-cat-badge"
+              title="Clique para editar categoria"
+              onClick={e => { e.stopPropagation(); setEditingCat(true); }}
+            >{t.category}</span>
+          )}
+          {pColor && activePeople.length > 1 && (
+            <span style={{fontSize:9,padding:"1px 6px",borderRadius:4,background:pColor+"20",color:pColor,flexShrink:0}}>{t.person}</span>
+          )}
+          {t.month && <span style={{color:"var(--text-ghost)",fontSize:9,flexShrink:0}}>{t.month}</span>}
+        </div>
+      </div>
+      <div className="txn-amount" style={{color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"var(--text-primary)"}}>
+        {t.amount<0?"+":""}{fmt(t.amount)}
+      </div>
+      {onDelete && (
+        <button className="txn-del-btn tap" onClick={handleDelete} title="Remover transação">✕</button>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════
 //  HOME SCREEN
 // ═══════════════════════════════════════════════
@@ -238,7 +302,6 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
           <div className="upload-sub">{people.length===0?"Comece adicionando uma pessoa":people.length===1?"Adicione outra pessoa para análise conjunta":"Análise individual ou em conjunto"}</div>
         </div>
 
-        {/* Person cards */}
         {stats.length>0&&(
           <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
             {stats.map(p=>(
@@ -249,7 +312,7 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
                     <div style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:p.color,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
                       <span style={{fontSize:11,color:"var(--text-faint)"}}>{p.count} compras</span>
-                      <span style={{fontSize:14,fontWeight:700,color:p.color,fontFamily:"system-ui, -apple-system, sans-serif"}}>{fmtShort(p.total)}</span>
+                      <span style={{fontSize:14,fontWeight:500,color:p.color,fontFamily:"'DM Mono',monospace"}}>{fmtShort(p.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -278,7 +341,6 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
           </div>
         )}
 
-        {/* Together CTA */}
         {canJoin&&(
           <button className="upload-cta ready tap-btn" style={{marginBottom:10}}
             onClick={()=>onOpenDashboard(people.map(p=>p.name))}>
@@ -286,7 +348,6 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
           </button>
         )}
 
-        {/* Add person */}
         <button className="tap-btn" onClick={onAddPerson}
           style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13,cursor:"pointer",fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}
           onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
@@ -301,7 +362,7 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
 }
 
 // ═══════════════════════════════════════════════
-//  ADD FILES SCREEN — add more files to existing person
+//  ADD FILES SCREEN
 // ═══════════════════════════════════════════════
 function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
   const [files,    setFiles]    = useState([]);
@@ -342,7 +403,6 @@ function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
       </div>
 
       <div className="upload-inner anim-fade-up">
-        {/* Person badge */}
         <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${person.color}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
           <PersonAvatar name={person.name} color={person.color} size={40} fontSize={15}/>
           <div>
@@ -351,7 +411,6 @@ function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
           </div>
         </div>
 
-        {/* Existing files */}
         {person.fileNames&&person.fileNames.length>0&&(
           <div style={{marginBottom:16}}>
             <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>ARQUIVOS JÁ CARREGADOS</div>
@@ -459,7 +518,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
       </div>
 
       <div className="upload-inner anim-fade-up">
-        {/* Step indicator */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
           <div style={{width:24,height:24,borderRadius:"50%",background:"var(--accent)",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>1</div>
           <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
@@ -516,7 +574,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
       </div>
 
       <div className="upload-inner anim-fade-up">
-        {/* Step indicator */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
           <div style={{width:24,height:24,borderRadius:"50%",background:"var(--bg-input)",color:"var(--text-faint)",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>1</div>
           <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
@@ -525,7 +582,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
           <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>ARQUIVOS</div>
         </div>
 
-        {/* Person badge */}
         <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${personColor}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
           <PersonAvatar name={personName} color={personColor} size={40} fontSize={15}/>
           <div>
@@ -613,7 +669,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
       </nav>
 
       <div className="sidebar-filters">
-        {/* Search */}
         <div className="filter-section">
           <div className="filter-label">BUSCAR {search&&<button className="filter-label-clear" onClick={()=>set("search","")}>limpar</button>}</div>
           <div className="search-wrap">
@@ -623,7 +678,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         </div>
 
-        {/* Pessoa */}
         {activePeople.length>1&&(
           <div className="filter-section">
             <div className="filter-label">PESSOA</div>
@@ -640,7 +694,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         )}
 
-        {/* Cartão */}
         <div className="filter-section">
           <div className="filter-label">CARTÃO</div>
           <div className="chips-row">
@@ -649,7 +702,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         </div>
 
-        {/* Ano */}
         {years.length>1&&(
           <div className="filter-section">
             <div className="filter-label">ANO</div>
@@ -660,13 +712,11 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         )}
 
-        {/* Mês */}
         <div className="filter-section">
           <div className="filter-label">MÊS</div>
           <div className="chips-scroll">{filteredMonths.map(m=><button key={m} className={`chip tap${selectedMonth===m?" active":""}`} onClick={()=>set("selectedMonth",m)}>{m==="all"?"Todos":m}</button>)}</div>
         </div>
 
-        {/* Tipo */}
         <div className="filter-section">
           <div className="filter-label">TIPO</div>
           <div className="type-grid">
@@ -676,7 +726,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         </div>
 
-        {/* Valor */}
         <div className="filter-section">
           <div className="filter-label">VALOR (R$) {(amountMin||amountMax)&&<button className="filter-label-clear" onClick={()=>{set("amountMin","");set("amountMax","");}}>limpar</button>}</div>
           <div className="range-row">
@@ -686,7 +735,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           </div>
         </div>
 
-        {/* Categoria */}
         <div className="filter-section">
           <div className="filter-label">CATEGORIA {categoryFilter!=="all"&&<button className="filter-label-clear" onClick={()=>set("categoryFilter","all")}>limpar</button>}</div>
           <div className="chips-row">
@@ -735,10 +783,10 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
   return (
     <div className="mobile-header">
       <div className="mh-top">
-        <div style={{flex:1}}>
-          <div className="mh-title" style={{display:"flex",alignItems:"center",gap:8}}>
-            {activePerson?<PersonAvatar name={activePerson.name} color={activePerson.color} size={24} fontSize={9}/>:"💳"}
-            <span>{activePerson?.name||activePeople.length>1?"Dashboard":activePeople[0]?.name||"Dashboard"}</span>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="mh-title" style={{display:"flex",alignItems:"center",gap:6}}>
+            {activePerson?<PersonAvatar name={activePerson.name} color={activePerson.color} size={22} fontSize={8}/>:"💳"}
+            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePerson?.name||activePeople.length>1?"Dashboard":activePeople[0]?.name||"Dashboard"}</span>
           </div>
           <div className="mh-sub">{txnCount} transações</div>
         </div>
@@ -784,7 +832,10 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
     <>
       <div className="drawer-overlay" onClick={onClose}/>
       <div className="drawer">
-        <div className="drawer-handle"/>
+        {/* Arrow button replaces the old handle bar */}
+        <div className="drawer-close-arrow">
+          <button onClick={onClose} title="Fechar filtros">↓</button>
+        </div>
         <div className="drawer-body">
           <div className="drawer-title-row">
             <span className="drawer-title">Filtros</span>
@@ -949,7 +1000,7 @@ function ComparisonPanel({ activePeople, filtered }) {
               <PersonAvatar name={s.name} color={s.color} size={30} fontSize={11}/>
               <div style={{fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:800,color:s.color}}>{s.name}</div>
             </div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,color:"var(--text-primary)",marginBottom:4}}>{fmtShort(s.total)}</div>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:20,fontWeight:500,color:"var(--text-primary)",marginBottom:4}}>{fmtShort(s.total)}</div>
             <div style={{fontSize:10,color:"var(--text-faint)",marginBottom:8}}>{s.count} compras · ticket {fmtShort(s.avg)}</div>
             <div className="prog-bar"><div className="prog-fill" style={{width:`${(s.total/maxTotal)*100}%`,background:s.color}}/></div>
             <div style={{fontSize:10,color:"var(--text-faint)",marginTop:4}}>{((s.total/maxTotal)*100).toFixed(0)}% do maior</div>
@@ -977,7 +1028,7 @@ function ComparisonPanel({ activePeople, filtered }) {
 }
 
 // ─── OVERVIEW TAB ─────────────────────────────
-function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople }) {
+function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const showComparison=activePeople.length>1;
 
@@ -1046,25 +1097,9 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
         <div className="dash-grid-full anim-fade-up">
           <div className="section-header" style={{marginBottom:8}}><div className="section-title">Últimas Transações</div><button className="section-action" onClick={()=>setActiveTab("transactions")}>ver todas →</button></div>
           <div className="txn-list">
-            {filtered.slice(0,8).map((t,i)=>{
-              const color=CAT_COLORS[t.category]||"#6b7280";
-              const pColor=activePeople.find(p=>p.name===t.person)?.color;
-              return (
-                <div key={i} className="txn-item tap">
-                  <div className="txn-icon" style={{background:color+"20"}}><div className="txn-icon-dot" style={{background:color}}/></div>
-                  <div className="txn-meta">
-                    <div className="txn-title">{t.title}</div>
-                    <div className="txn-info">
-                      <span>{fmtDate(t.date)}</span>
-                      <span className="txn-card-badge" style={{background:(CARD_COLORS[t.card]||"#64748b")+"20",color:CARD_COLORS[t.card]||"#64748b"}}>{t.card}</span>
-                      <span className="txn-cat-badge">{t.category}</span>
-                      {pColor&&activePeople.length>1&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:4,background:pColor+"20",color:pColor}}>{t.person}</span>}
-                    </div>
-                  </div>
-                  <div className="txn-amount" style={{color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"var(--text-primary)"}}>{t.amount<0?"+":""}{fmt(t.amount)}</div>
-                </div>
-              );
-            })}
+            {filtered.slice(0,8).map((t,i)=>(
+              <TransactionItem key={i} t={t} idx={i} activePeople={activePeople} onDelete={onDeleteTransaction} onEditCategory={onEditCategory}/>
+            ))}
           </div>
         </div>
       </div>
@@ -1073,13 +1108,13 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
 }
 
 // ─── TRANSACTIONS TAB ─────────────────────────
-function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople }) {
+function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople, onDeleteTransaction, onEditCategory }) {
   const [limit,setLimit]=useState(50);
   const expenses=filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");
   const total=expenses.reduce((s,t)=>s+t.amount,0);
   return (
     <div className="anim-fade-up">
-      <div className="sort-strip" style={{flexWrap:"wrap"}}>
+      <div className="sort-strip">
         <span className="sort-label">ORDENAR:</span>
         {[["date","Data"],["amount","Valor"],["card","Cartão"],["title","Nome"],["category","Categoria"],["person","Pessoa"]].map(([f,l])=>(
           <button key={f} className={`sort-btn tap${sortBy===f?" active":""}`} onClick={()=>toggleSort(f)}>{l}{sortBy===f&&(sortDir==="desc"?" ↓":" ↑")}</button>
@@ -1093,27 +1128,9 @@ function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople }
         <div className="empty-state"><div className="empty-state-icon">🔍</div><div className="empty-state-title">Nenhuma transação encontrada</div><div className="empty-state-sub">Tente ajustar os filtros</div></div>
       ):(
         <div className="txn-list">
-          {filtered.slice(0,limit).map((t,i)=>{
-            const color=CAT_COLORS[t.category]||"#6b7280";
-            const cardColor=CARD_COLORS[t.card]||"#64748b";
-            const pColor=activePeople.find(p=>p.name===t.person)?.color;
-            return (
-              <div key={i} className="txn-item tap" style={{background:i%2===0?"var(--bg-card)":"var(--bg-card-hover)"}}>
-                <div className="txn-icon" style={{background:color+"20"}}><div className="txn-icon-dot" style={{background:color}}/></div>
-                <div className="txn-meta">
-                  <div className="txn-title">{t.title}</div>
-                  <div className="txn-info">
-                    <span>{fmtDate(t.date)}</span>
-                    <span className="txn-card-badge" style={{background:cardColor+"20",color:cardColor}}>{t.card}</span>
-                    <span className="txn-cat-badge">{t.category}</span>
-                    {pColor&&activePeople.length>1&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:4,background:pColor+"20",color:pColor}}>{t.person}</span>}
-                    <span style={{color:"var(--text-ghost)",fontSize:9}}>{t.month}</span>
-                  </div>
-                </div>
-                <div className="txn-amount" style={{color:t.amount<0?"#22c55e":t.category==="Encargos/Juros"?"#ef4444":"var(--text-primary)"}}>{t.amount<0?"+":""}{fmt(t.amount)}</div>
-              </div>
-            );
-          })}
+          {filtered.slice(0,limit).map((t,i)=>(
+            <TransactionItem key={`${t.date}-${t.title}-${t.amount}-${i}`} t={t} idx={i} striped activePeople={activePeople} onDelete={onDeleteTransaction} onEditCategory={onEditCategory}/>
+          ))}
           {filtered.length>limit&&<button className="load-more-btn tap" onClick={()=>setLimit(l=>l+50)}>Carregar mais ({filtered.length-limit} restantes)</button>}
         </div>
       )}
@@ -1149,7 +1166,7 @@ function CategoriesTab({ catBreakdown, expenses, totalExp, setFilters, setActive
             <div key={cat.name} className="section-card tap anim-fade-up" style={{cursor:"pointer"}} onClick={()=>{setFilters(f=>({...f,categoryFilter:cat.name}));setActiveTab("transactions");}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><span className="cat-dot" style={{background:color,width:11,height:11}}/><span style={{fontFamily:"'Syne',sans-serif",fontSize:13,fontWeight:700,color:"var(--text-primary)"}}>{cat.name}</span></div>
-                <div style={{textAlign:"right"}}><div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color}}>{fmt(cat.value)}</div><div style={{fontSize:9,color:"var(--text-faint)"}}>{pct}% · {catTxns.length} itens</div></div>
+                <div style={{textAlign:"right"}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:500,color}}>{fmt(cat.value)}</div><div style={{fontSize:9,color:"var(--text-faint)"}}>{pct}% · {catTxns.length} itens</div></div>
               </div>
               <div className="prog-bar"><div className="prog-fill" style={{width:`${pct}%`,background:color}}/></div>
               {top&&<div style={{fontSize:10,color:"var(--text-faint)",marginTop:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>↑ {top.title.slice(0,42)}</div>}
@@ -1219,13 +1236,13 @@ function TrendsTab({ filtered, monthlyTrend, catBreakdown, uniqueCards, activePe
         <div className="alert-card danger">
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <span style={{fontFamily:"'Syne',sans-serif",fontSize:13,fontWeight:700,color:"#ef4444"}}>⚠️ Encargos Detectados</span>
-            <span style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:"#ef4444"}}>{fmt(totalEnc)}</span>
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:15,fontWeight:500,color:"#ef4444"}}>{fmt(totalEnc)}</span>
           </div>
           {encargos.map((t,i)=>(
             <div key={i} className="charge-item">
               <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:3}}>{fmtDate(t.date)} · {t.card}{t.person&&activePeople.length>1?` · ${t.person}`:""}</div>
               <div style={{fontSize:11,color:"var(--text-sec)",marginBottom:4}}>{t.title}</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#ef4444",fontFamily:"'Syne',sans-serif"}}>{fmt(t.amount)}</div>
+              <div style={{fontSize:15,fontWeight:500,color:"#ef4444",fontFamily:"'DM Mono',monospace"}}>{fmt(t.amount)}</div>
             </div>
           ))}
         </div>
@@ -1249,7 +1266,7 @@ function BottomNav({ activeTab, setActiveTab }) {
 }
 
 // ─── DASHBOARD ────────────────────────────────
-function Dashboard({ activePeople, onReset, dark, toggleTheme }) {
+function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransaction, onEditCategory }) {
   const transactions=useMemo(()=>activePeople.flatMap(p=>p.transactions),[activePeople]);
   const [activeTab,  setActiveTab]  = useState("overview");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -1259,9 +1276,12 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme }) {
 
   const cards   = useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
   const years   = useMemo(()=>[...new Set(transactions.map(t=>t.year).filter(Boolean))].sort(),[transactions]);
+  // Filter out year-only month labels (e.g. "2025", "2026")
   const months  = useMemo(()=>{
     const parseM=s=>{const p=s.match(/(\w+)\/(\d{4})/);if(!p)return 0;const mo={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};return parseInt(p[2])*100+(mo[p[1].toLowerCase().slice(0,3)]||0);};
-    return [...new Set(transactions.map(t=>t.month))].sort((a,b)=>parseM(a)-parseM(b));
+    return [...new Set(transactions.map(t=>t.month))]
+      .filter(m => m && !/^\d{4}$/.test(m))
+      .sort((a,b)=>parseM(a)-parseM(b));
   },[transactions]);
   const uniqueCards=useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
 
@@ -1304,13 +1324,13 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme }) {
     return Object.values(map).map(m=>({...m,total:+m.total.toFixed(2)})).sort((a,b)=>parseM(a.month)-parseM(b.month));
   },[filtered]);
   const topMerchants=useMemo(()=>{const map={};expenses.forEach(t=>{const key=t.title.replace(/ - Parcela \d+\/\d+/g,"").trim();if(!map[key])map[key]={name:key,total:0,count:0};map[key].total+=t.amount;map[key].count++;});return Object.values(map).sort((a,b)=>b.total-a.total).slice(0,10).map(m=>({...m,total:+m.total.toFixed(2)}));},[expenses]);
-  const cardStats=useMemo(()=>uniqueCards.map(card=>{const txns=filtered.filter(t=>t.card===card&&t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};}),[ filtered,uniqueCards]);
+  const cardStats=useMemo(()=>uniqueCards.map(card=>{const txns=filtered.filter(t=>t.card===card&&t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};}),[filtered,uniqueCards]);
   const toggleSort=field=>{if(sortBy===field)setSortDir(d=>d==="desc"?"asc":"desc");else{setSortBy(field);setSortDir("desc");}};
 
   const tabContent=()=>{
     switch(activeTab){
-      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} totalPay={totalPay} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople}/>;
-      case "transactions": return <TransactionsTab filtered={filtered} sortBy={sortBy} sortDir={sortDir} toggleSort={toggleSort} activePeople={activePeople}/>;
+      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} totalPay={totalPay} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
+      case "transactions": return <TransactionsTab filtered={filtered} sortBy={sortBy} sortDir={sortDir} toggleSort={toggleSort} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "categories":   return <CategoriesTab catBreakdown={catBreakdown} expenses={expenses} totalExp={totalExp} setFilters={setFilters} setActiveTab={setActiveTab}/>;
       case "trends":       return <TrendsTab filtered={filtered} monthlyTrend={monthlyTrend} catBreakdown={catBreakdown} uniqueCards={uniqueCards} activePeople={activePeople}/>;
       default: return null;
@@ -1336,14 +1356,19 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme }) {
 // ═══════════════════════════════════════════════
 function App() {
   const [dark, toggleTheme] = useTheme();
-  const [screen,       setScreen]       = useState("home");
-  const [people,       setPeople]       = useState(()=>loadPeople());
-  const [activePeople, setActivePeople] = useState([]);
-  const [addFilesPerson, setAddFilesPerson] = useState(null);
+  const [screen,            setScreen]            = useState("home");
+  const [people,            setPeople]            = useState(()=>loadPeople());
+  const [activePersonNames, setActivePersonNames] = useState([]);
+  const [addFilesPerson,    setAddFilesPerson]    = useState(null);
+
+  // Derive activePeople reactively — auto-updates when people changes
+  const activePeople = useMemo(
+    () => people.filter(p => activePersonNames.includes(p.name)),
+    [people, activePersonNames]
+  );
 
   const handleOpenDashboard = names => {
-    const selected=people.filter(p=>names.includes(p.name));
-    setActivePeople(selected);
+    setActivePersonNames(names);
     setScreen("dashboard");
   };
 
@@ -1357,8 +1382,7 @@ function App() {
 
   const handleRemovePerson = name => {
     removePerson(name);
-    const updated=loadPeople();
-    setPeople(updated);
+    setPeople(loadPeople());
   };
 
   const handleAddFiles = name => {
@@ -1375,9 +1399,50 @@ function App() {
     setScreen("home");
   };
 
+  // Delete a single transaction — updates state + localStorage
+  const handleDeleteTransaction = useCallback((personName, date, title, amount) => {
+    setPeople(prevPeople => {
+      const updated = prevPeople.map(p => {
+        if (p.name !== personName) return p;
+        let removed = false;
+        return {
+          ...p,
+          transactions: p.transactions.filter(t => {
+            if (!removed && t.date === date && t.title === title && t.amount === amount) {
+              removed = true;
+              return false;
+            }
+            return true;
+          })
+        };
+      });
+      savePeople(updated);
+      return updated;
+    });
+  }, []);
+
+  // Edit category of a transaction — updates state + localStorage
+  const handleEditCategory = useCallback((personName, date, title, amount, newCategory) => {
+    setPeople(prevPeople => {
+      const updated = prevPeople.map(p => {
+        if (p.name !== personName) return p;
+        return {
+          ...p,
+          transactions: p.transactions.map(t => {
+            if (t.date === date && t.title === title && t.amount === amount) {
+              return { ...t, category: newCategory };
+            }
+            return t;
+          })
+        };
+      });
+      savePeople(updated);
+      return updated;
+    });
+  }, []);
+
   const handleReset = () => {
-    setPeople(loadPeople());
-    setActivePeople([]);
+    setActivePersonNames([]);
     setScreen("home");
   };
 
@@ -1390,7 +1455,7 @@ function App() {
   );
 
   if(screen==="dashboard"&&activePeople.length>0) return (
-    <Dashboard activePeople={activePeople} dark={dark} toggleTheme={toggleTheme} onReset={handleReset}/>
+    <Dashboard activePeople={activePeople} dark={dark} toggleTheme={toggleTheme} onReset={handleReset} onDeleteTransaction={handleDeleteTransaction} onEditCategory={handleEditCategory}/>
   );
 
   return (
