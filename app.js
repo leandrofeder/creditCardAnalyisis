@@ -52,22 +52,22 @@ const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf
 function categorize(title) {
   const t = title.toLowerCase();
   if(t.includes("uber")||t.includes("99app")) return "Transporte";
-  if(t.includes("fitland")||t.includes("54656637adan")||t.includes("koch")||t.includes("supermercado")||t.includes("sams club")||t.includes("hipermercado")||t.includes("cooper")||t.includes("mercado garcia")||t.includes("cs koch")||t.includes("atacadao")||t.includes("carrefour")) return "Supermercado";
+  if(t.includes("fitland")||t.includes("koch")||t.includes("supermercado")||t.includes("rede top")||t.includes("sams club")||t.includes("hipermercado")||t.includes("cooper")||t.includes("mercado garcia")||t.includes("cs koch")||t.includes("atacadao")||t.includes("carrefour")) return "Supermercado";
   if(t.includes("farmacia")||t.includes("saude")||t.includes("otica")||t.includes("medic")||t.includes("drogasil")) return "Saúde";
   if(t.includes("academia")||t.includes("smartfit")||t.includes("bluefit")) return "Academia/Saúde";
   if(t.includes("apple")||t.includes("microsoft")||t.includes("canva")||t.includes("hostgator")||t.includes("applecombill")||t.includes("netflix")||t.includes("spotify")||t.includes("amazon prime")||t.includes("youtube")||t.includes("chatgpt")||t.includes("openai")||t.includes("dropbox")||t.includes("adobe")||t.includes("icloud")) return "Tecnologia/Assinaturas";
   if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")||t.includes("americanas")||t.includes("aliexpress")) return "Compras Online";
   if(t.includes("posto")||t.includes("gasolina")||t.includes("zandona")||t.includes("autopost")||t.includes("combustivel")||t.includes("shell")||t.includes("ipiranga")) return "Gasolina";
-  if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("baitah")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")||t.includes("ifood")||t.includes("rappi")||t.includes("delivery")) return "Gastronomia";
+  if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")||t.includes("ifood")||t.includes("rappi")||t.includes("delivery")) return "Gastronomia";
   if(t.includes("padaria")||t.includes("panificadora")||t.includes("girassol")||t.includes("royale")||t.includes("dona norma")) return "Padaria/Alimentação";
   if(t.includes("cafe vending")||t.includes("aromapress")||t.includes("raiden")||t.includes("cappta")||t.includes("starbucks")||t.includes("cafe")) return "Cafés/Pequenos";
-  if(t.includes("convenienc")||t.includes("conveni")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
+  if(t.includes("54656637adan")||t.includes("baitah")||t.includes("convenienc")||t.includes("conveni")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
   if(t.includes("pagamento recebido")||t.includes("pagamento efetuado")) return "Pagamento";
   if(t.includes("parcela")||t.includes("siapi")||t.includes("panasonic")||t.includes("prata fina")||t.includes("isabela")||t.includes("s v comercio")) return "Parcelamentos";
   if(t.includes("juros")||t.includes("multa")||t.includes("iof")||t.includes("saldo em")||t.includes("rotativo")||t.includes("mora")) return "Encargos/Juros";
-  if(t.includes("estacionamento")||t.includes("estapar")||t.includes("parking")) return "Estacionamento";
+  if(t.includes("estacionamento")||t.includes("estapar")||t.includes("blumenau norte shopp")||t.includes("parking")) return "Estacionamento";
   if(t.includes("bazar")||t.includes("reuter")||t.includes("tecnofesta")||t.includes("milium")||t.includes("cacau")) return "Presentes/Bazar";
-  if(t.includes("leiturinha")||t.includes("escola")||t.includes("rede top")||t.includes("universidade")||t.includes("curso")) return "Educação";
+  if(t.includes("leiturinha")||t.includes("escola")||t.includes("universidade")||t.includes("curso")) return "Educação";
   if(t.includes("vivo")||t.includes("intercel")||t.includes("rcga")||t.includes("claro")||t.includes("tim ")||t.includes("oi ")) return "Telecomunicações";
   if(t.includes("allianz")||t.includes("seguro")||t.includes("bradesco seguros")) return "Seguros";
   return "Outros";
