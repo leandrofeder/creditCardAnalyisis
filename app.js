@@ -20,6 +20,17 @@ function useTheme() {
   return [dark, () => setDark(d => !d)];
 }
 
+// ─── WINDOW WIDTH HOOK ────────────────────────
+function useWindowWidth() {
+  const [w, setW] = useState(()=>typeof window!=="undefined"?window.innerWidth:1024);
+  useEffect(()=>{
+    const fn=()=>setW(window.innerWidth);
+    window.addEventListener("resize",fn,{passive:true});
+    return()=>window.removeEventListener("resize",fn);
+  },[]);
+  return w;
+}
+
 // ─── RECHARTS ─────────────────────────────────
 if (typeof Recharts === "undefined") {
   document.getElementById("root").innerHTML =
@@ -37,8 +48,9 @@ const fmtTs    = ts => ts ? new Date(ts).toLocaleString("pt-BR",{day:"2-digit",m
 
 // ─── CONSTANTS ────────────────────────────────
 const CAT_COLORS = {
-  "Supermercado":"#22c55e","Gastronomia":"#f97316","Transporte":"#3b82f6",
-  "Tecnologia/Assinaturas":"#8b5cf6","Compras Online":"#06b6d4","Gasolina":"#eab308",
+  "Supermercado":"#22c55e","Gastronomia":"#f97316","Delivery":"#f43f5e",
+  "Transporte":"#3b82f6","Tecnologia/Assinaturas":"#8b5cf6",
+  "Compras Online":"#06b6d4","Gasolina":"#eab308",
   "Saúde":"#ec4899","Padaria/Alimentação":"#a78bfa","Academia/Saúde":"#14b8a6",
   "Cafés/Pequenos":"#fb923c","Conveniência":"#c026d3","Parcelamentos":"#64748b",
   "Encargos/Juros":"#ef4444","Pagamento":"#10b981","Estacionamento":"#94a3b8",
@@ -47,6 +59,25 @@ const CAT_COLORS = {
 };
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
+
+// ─── PT MONTHS HELPER ─────────────────────────
+const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+// normaliza qualquer label de mês para "Mmm/YYYY"
+function normalizeMonthLabel(raw) {
+  if (!raw) return raw;
+  // já está no formato correto "Xxx/YYYY"
+  if (/^[A-Za-z]{3}\/\d{4}$/.test(raw)) return raw.charAt(0).toUpperCase() + raw.slice(1);
+  // "fev. de 2025" ou "fev 2025" ou "fev. 2025" – legado do toLocaleDateString
+  const m = raw.match(/^([a-záéíóúãõç]+)\.?\s+(?:de\s+)?(\d{4})$/i);
+  if (m) {
+    const ptMap = {jan:"Jan",fev:"Fev",mar:"Mar",abr:"Abr",mai:"Mai",jun:"Jun",
+                   jul:"Jul",ago:"Ago",set:"Set",out:"Out",nov:"Nov",dez:"Dez"};
+    const abbr = ptMap[m[1].toLowerCase().slice(0,3)];
+    if (abbr) return `${abbr}/${m[2]}`;
+  }
+  return raw;
+}
 
 // ─── CATEGORIZER ──────────────────────────────
 function categorize(title) {
@@ -58,7 +89,9 @@ function categorize(title) {
   if(t.includes("apple")||t.includes("microsoft")||t.includes("canva")||t.includes("hostgator")||t.includes("applecombill")||t.includes("netflix")||t.includes("spotify")||t.includes("amazon prime")||t.includes("youtube")||t.includes("chatgpt")||t.includes("openai")||t.includes("dropbox")||t.includes("adobe")||t.includes("icloud")) return "Tecnologia/Assinaturas";
   if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")||t.includes("americanas")||t.includes("aliexpress")) return "Compras Online";
   if(t.includes("posto")||t.includes("gasolina")||t.includes("zandona")||t.includes("autopost")||t.includes("combustivel")||t.includes("shell")||t.includes("martini comercio de")||t.includes("ipiranga")) return "Gasolina";
-  if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")||t.includes("ifood")||t.includes("rappi")||t.includes("delivery")) return "Gastronomia";
+  // Delivery — antes de Gastronomia para capturar ifood/rappi/delivery primeiro
+  if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("loggi")||t.includes("motoboy")) return "Delivery";
+  if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")) return "Gastronomia";
   if(t.includes("padaria")||t.includes("panificadora")||t.includes("girassol")||t.includes("royale")||t.includes("dona norma")) return "Padaria/Alimentação";
   if(t.includes("cafe vending")||t.includes("aromapress")||t.includes("raiden")||t.includes("cappta")||t.includes("starbucks")||t.includes("cafe")) return "Cafés/Pequenos";
   if(t.includes("54656637adan")||t.includes("baitah")||t.includes("convenienc")||t.includes("conveni")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
@@ -76,10 +109,11 @@ function categorize(title) {
 // ─── PARSERS ──────────────────────────────────
 function parseCSV(text, filename, personName) {
   const lines = text.trim().split(/\r?\n/).slice(1);
+  // ── FIX: normaliza label do mês para "Mmm/YYYY" consistente ──
   const m = filename.match(/(\d{4}-\d{2})/);
   const label = m
-    ? new Date(m[1]+"-01").toLocaleDateString("pt-BR",{month:"short",year:"numeric"}).replace(".","")
-    : filename.replace(/\.[^.]+$/,"");
+    ? `${PT_MO_SHORT[parseInt(m[1].slice(5, 7), 10) - 1]}/${m[1].slice(0, 4)}`
+    : filename.replace(/\.[^.]+$/, "");
   return lines.map(line => {
     const parts=[]; let cur="",inQ=false;
     for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){parts.push(cur);cur="";}else{cur+=ch;}}
@@ -122,7 +156,8 @@ async function parsePDF(file, personName) {
   const isYearOnly=/^\d+$/.test(rawM);
   const fileBase=file.name.replace(/\.[^.]+$/,"").replace(/^\d{4}$/,"arquivo");
   const monthPart=ptMap[rawM]||(!isYearOnly?rawM:null)||fileBase;
-  const monthLabel=monthPart+"/"+year;
+  // ── FIX: garante formato "Mmm/YYYY" ──
+  const monthLabel=normalizeMonthLabel(`${monthPart}/${year}`);
   const txns=[];
   const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};
   if(isAilos){
@@ -639,13 +674,77 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
   );
 }
 
+// ─── MULTI-SEARCH INPUT ───────────────────────
+// Componente reutilizável para busca com múltiplas tags
+function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar… (Enter p/ adicionar)", small=false }) {
+  const set = (key, val) => setFilters(f => ({...f, [key]: val}));
+
+  const handleKeyDown = e => {
+    if (e.key === "Enter" && search.trim()) {
+      e.preventDefault();
+      setFilters(f => ({...f, searchTags: [...(f.searchTags||[]), search.trim()], search: ""}));
+    }
+    if (e.key === "Backspace" && !search && searchTags && searchTags.length > 0) {
+      setFilters(f => ({...f, searchTags: f.searchTags.slice(0, -1)}));
+    }
+  };
+
+  const removeTag = idx => {
+    setFilters(f => ({...f, searchTags: f.searchTags.filter((_,i) => i !== idx)}));
+  };
+
+  return (
+    <div>
+      {searchTags && searchTags.length > 0 && (
+        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+          {searchTags.map((tag, i) => (
+            <span key={i}
+              onClick={() => removeTag(i)}
+              style={{
+                display:"inline-flex",alignItems:"center",gap:4,
+                padding:"3px 8px",borderRadius:6,cursor:"pointer",
+                background:"var(--accent-glow)",border:"1px solid var(--accent-border)",
+                color:"var(--accent-text)",fontSize:small?9:10,
+                fontFamily:"'DM Mono',monospace",whiteSpace:"nowrap",
+              }}>
+              {tag} <span style={{opacity:.7}}>✕</span>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="search-wrap">
+        <span className="search-icon">🔍</span>
+        <input
+          className="search-input"
+          type="text"
+          placeholder={searchTags && searchTags.length > 0 ? "+ outra busca (Enter)" : placeholder}
+          value={search}
+          onChange={e => set("search", e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        {search && <button className="search-clear" onClick={() => set("search", "")}>✕</button>}
+      </div>
+      {search && (
+        <div style={{fontSize:9,color:"var(--text-faint)",marginTop:4,letterSpacing:".04em"}}>
+          ↵ Enter para adicionar como tag · Backspace para remover última
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FILTER SIDEBAR ───────────────────────────
-function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeople, cards, years, months, totalCount, dark, toggleTheme, onReset }) {
-  const { search,selectedPerson,selectedCard,selectedYear,selectedMonth,categoryFilter,txnType,amountMin,amountMax } = filters;
+function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeople, cards, years, months, totalCount, catStats, dark, toggleTheme, onReset }) {
+  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter = !!search||selectedPerson!=="all"||selectedCard!=="all"||selectedYear!=="all"||selectedMonth!=="all"||categoryFilter!=="all"||txnType!=="all"||!!amountMin||!!amountMax;
-  const filterCount = [search,selectedPerson!=="all",selectedCard!=="all",selectedYear!=="all",selectedMonth!=="all",categoryFilter!=="all",txnType!=="all",!!amountMin,!!amountMax].filter(Boolean).length;
-  const clearAll = () => setFilters(f=>({...f,search:"",selectedPerson:"all",selectedCard:"all",selectedYear:"all",selectedMonth:"all",categoryFilter:"all",txnType:"all",amountMin:"",amountMax:""}));
+  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter!=="all" || txnType!=="all" || !!amountMin || !!amountMax;
+  const filterCount = [
+    search, searchTags.length > 0,
+    selectedPerson!=="all", selectedCard!=="all", selectedYear!=="all",
+    selectedMonth!=="all", categoryFilter!=="all", txnType!=="all",
+    !!amountMin, !!amountMax,
+  ].filter(Boolean).length;
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
   const filteredMonths = useMemo(()=>{
     const base=["all",...months.filter(m=>m!=="all")];
     if(selectedYear==="all") return base;
@@ -669,13 +768,15 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
       </nav>
 
       <div className="sidebar-filters">
+        {/* ── MULTI-SEARCH ─── */}
         <div className="filter-section">
-          <div className="filter-label">BUSCAR {search&&<button className="filter-label-clear" onClick={()=>set("search","")}>limpar</button>}</div>
-          <div className="search-wrap">
-            <span className="search-icon">🔍</span>
-            <input className="search-input" type="text" placeholder="Estabelecimento…" value={search} onChange={e=>set("search",e.target.value)}/>
-            {search&&<button className="search-clear" onClick={()=>set("search","")}>✕</button>}
+          <div className="filter-label">
+            BUSCAR
+            {(search || searchTags.length > 0) && (
+              <button className="filter-label-clear" onClick={() => setFilters(f => ({...f, search:"", searchTags:[]}))}>limpar</button>
+            )}
           </div>
+          <MultiSearchInput search={search} searchTags={searchTags} setFilters={setFilters} small />
         </div>
 
         {activePeople.length>1&&(
@@ -739,11 +840,30 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           <div className="filter-label">CATEGORIA {categoryFilter!=="all"&&<button className="filter-label-clear" onClick={()=>set("categoryFilter","all")}>limpar</button>}</div>
           <div className="chips-row">
             <button className={`chip tap${categoryFilter==="all"?" active":""}`} onClick={()=>set("categoryFilter","all")}>Todas</button>
-            {Object.entries(CAT_COLORS).map(([name,color])=>(
-              <button key={name} className={`cat-chip tap${categoryFilter===name?" active":""}`} onClick={()=>set("categoryFilter",name)} style={categoryFilter===name?{borderColor:color+"60",background:color+"15",color}:{}}>
-                <span className="dot" style={{background:color}}/>{name}
-              </button>
-            ))}
+            {Object.entries(CAT_COLORS).map(([name,color])=>{
+              const val = catStats?.map?.[name] || 0;
+              const pct = catStats?.total > 0 ? ((val/catStats.total)*100).toFixed(0) : 0;
+              const isEmpty = val === 0;
+              return (
+                <button key={name}
+                  className={`cat-chip tap${categoryFilter===name?" active":""}`}
+                  onClick={()=>set("categoryFilter",name)}
+                  style={categoryFilter===name
+                    ? {borderColor:color+"60",background:color+"15",color,opacity:1}
+                    : isEmpty ? {opacity:.35} : {}
+                  }>
+                  <span className="dot" style={{background:color}}/>
+                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
+                  {!isEmpty && (
+                    <span style={{
+                      fontSize:9,flexShrink:0,marginLeft:4,
+                      color: categoryFilter===name ? "inherit" : color,
+                      opacity:.85,fontWeight:500,
+                    }}>{pct}%</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -755,6 +875,9 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
             <button onClick={clearAll} style={{fontSize:9,color:"var(--danger)",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace"}}>Limpar tudo</button>
           </div>
           {search&&<span className="active-filter-tag" onClick={()=>set("search","")}>"{search}" ✕</span>}
+          {searchTags.map((tag,i)=>(
+            <span key={i} className="active-filter-tag" onClick={()=>setFilters(f=>({...f,searchTags:f.searchTags.filter((_,j)=>j!==i)}))}>"{tag}" ✕</span>
+          ))}
           {selectedPerson!=="all"&&<span className="active-filter-tag" onClick={()=>set("selectedPerson","all")}>{selectedPerson} ✕</span>}
           {selectedCard!=="all"&&<span className="active-filter-tag" onClick={()=>set("selectedCard","all")}>{selectedCard} ✕</span>}
           {selectedYear!=="all"&&<span className="active-filter-tag" onClick={()=>set("selectedYear","all")}>{selectedYear} ✕</span>}
@@ -777,7 +900,14 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
 function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggleTheme, onOpenFilter, onReset }) {
   const [showSearch, setShowSearch] = useState(false);
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const filterCount = [filters.search,filters.selectedPerson!=="all",filters.selectedCard!=="all",filters.selectedYear!=="all",filters.selectedMonth!=="all",filters.categoryFilter!=="all",filters.txnType!=="all",!!filters.amountMin,!!filters.amountMax].filter(Boolean).length;
+  const { searchTags=[] } = filters;
+  const filterCount = [
+    filters.search, searchTags.length > 0,
+    filters.selectedPerson!=="all", filters.selectedCard!=="all",
+    filters.selectedYear!=="all", filters.selectedMonth!=="all",
+    filters.categoryFilter!=="all", filters.txnType!=="all",
+    !!filters.amountMin, !!filters.amountMax,
+  ].filter(Boolean).length;
   const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
 
   return (
@@ -799,17 +929,22 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
       </div>
       {showSearch&&(
         <div className="mobile-search-row">
-          <div className="search-wrap">
-            <span className="search-icon">🔍</span>
-            <input className="search-input" type="text" placeholder="Buscar…" value={filters.search} onChange={e=>set("search",e.target.value)} autoFocus/>
-            {filters.search&&<button className="search-clear" onClick={()=>set("search","")}>✕</button>}
-          </div>
+          <MultiSearchInput
+            search={filters.search}
+            searchTags={filters.searchTags||[]}
+            setFilters={setFilters}
+            placeholder="Buscar… (Enter p/ adicionar)"
+            small
+          />
         </div>
       )}
       {filterCount>0&&(
         <div className="mh-chips">
-          {filters.selectedPerson!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedPerson","all")}>{filters.selectedPerson} ✕</span>}
+          {searchTags.map((tag,i)=>(
+            <span key={i} className="chip active" style={{fontSize:10}} onClick={()=>setFilters(f=>({...f,searchTags:f.searchTags.filter((_,j)=>j!==i)}))}>"{tag}" ✕</span>
+          ))}
           {filters.search&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("search","")}>"{filters.search}" ✕</span>}
+          {filters.selectedPerson!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedPerson","all")}>{filters.selectedPerson} ✕</span>}
           {filters.selectedCard!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedCard","all")}>{filters.selectedCard} ✕</span>}
           {filters.selectedYear!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedYear","all")}>{filters.selectedYear} ✕</span>}
           {filters.selectedMonth!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedMonth","all")}>{filters.selectedMonth} ✕</span>}
@@ -823,16 +958,15 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
 // ─── MOBILE FILTER DRAWER ─────────────────────
 function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards, years, months }) {
   if(!open) return null;
-  const { search,selectedPerson,selectedCard,selectedYear,selectedMonth,categoryFilter,txnType,amountMin,amountMax } = filters;
+  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter=!!search||selectedPerson!=="all"||selectedCard!=="all"||selectedYear!=="all"||selectedMonth!=="all"||categoryFilter!=="all"||txnType!=="all"||!!amountMin||!!amountMax;
-  const clearAll=()=>setFilters(f=>({...f,search:"",selectedPerson:"all",selectedCard:"all",selectedYear:"all",selectedMonth:"all",categoryFilter:"all",txnType:"all",amountMin:"",amountMax:""}));
-  const filteredMonths=selectedYear==="all"?["all",...months.filter(m=>m!=="all")]:["all",...months.filter(m=>m!=="all"&&m.endsWith(selectedYear))];
+  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter!=="all" || txnType!=="all" || !!amountMin || !!amountMax;
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
+  const filteredMonths = selectedYear==="all"?["all",...months.filter(m=>m!=="all")]:["all",...months.filter(m=>m!=="all"&&m.endsWith(selectedYear))];
   return (
     <>
       <div className="drawer-overlay" onClick={onClose}/>
       <div className="drawer">
-        {/* Arrow button replaces the old handle bar */}
         <div className="drawer-close-arrow">
           <button onClick={onClose} title="Fechar filtros">↓</button>
         </div>
@@ -841,10 +975,13 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
             <span className="drawer-title">Filtros</span>
             {hasFilter&&<button className="drawer-clear-btn tap" onClick={clearAll}>Limpar tudo</button>}
           </div>
+
+          {/* ── MULTI-SEARCH ─── */}
           <div className="filter-section">
             <div className="filter-label">BUSCAR</div>
-            <div className="search-wrap"><span className="search-icon">🔍</span><input className="search-input" type="text" placeholder="Estabelecimento…" value={search} onChange={e=>set("search",e.target.value)}/>{search&&<button className="search-clear" onClick={()=>set("search","")}>✕</button>}</div>
+            <MultiSearchInput search={search} searchTags={searchTags} setFilters={setFilters} />
           </div>
+
           {activePeople.length>1&&(
             <div className="filter-section">
               <div className="filter-label">PESSOA</div>
@@ -911,8 +1048,9 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
 // ─── DESKTOP HEADER ───────────────────────────
 function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount }) {
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
+  const { searchTags=[] } = filters;
   const tabTitles={overview:"Visão Geral",transactions:"Transações",categories:"Categorias",trends:"Tendências"};
-  const clearAll=()=>setFilters(f=>({...f,search:"",selectedPerson:"all",selectedCard:"all",selectedYear:"all",selectedMonth:"all",categoryFilter:"all",txnType:"all",amountMin:"",amountMax:""}));
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
   const activeTags=[
     filters.selectedPerson!=="all"&&{key:"selectedPerson",label:`Pessoa: ${filters.selectedPerson}`},
     filters.selectedCard!=="all"&&{key:"selectedCard",label:`Cartão: ${filters.selectedCard}`},
@@ -924,6 +1062,18 @@ function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount 
   ].filter(Boolean);
   const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
   const viewLabel = activePerson?activePerson.name:activePeople.length>1?"Juntos":activePeople[0]?.name||"";
+  const hasAnyFilter = !!filters.search || searchTags.length > 0 || activeTags.length > 0;
+
+  // Handle Enter to add search tag in the desktop header input
+  const handleSearchKeyDown = e => {
+    if (e.key === "Enter" && filters.search.trim()) {
+      e.preventDefault();
+      setFilters(f => ({...f, searchTags:[...(f.searchTags||[]), f.search.trim()], search:""}));
+    }
+    if (e.key === "Backspace" && !filters.search && searchTags.length > 0) {
+      setFilters(f => ({...f, searchTags: f.searchTags.slice(0,-1)}));
+    }
+  };
 
   return (
     <>
@@ -940,13 +1090,23 @@ function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount 
         <span className="dh-sep">·</span><div className="dh-subtitle">{txnCount} transações</div>
         <div className="dh-search-wrap">
           <span className="dh-search-icon">🔍</span>
-          <input className="dh-search" type="text" placeholder="Buscar estabelecimento, categoria…" value={filters.search} onChange={e=>set("search",e.target.value)}/>
+          <input
+            className="dh-search"
+            type="text"
+            placeholder={searchTags.length > 0 ? `+ busca (Enter) · ${searchTags.length} tag${searchTags.length>1?"s":""}` : "Buscar… Enter p/ adicionar tag"}
+            value={filters.search}
+            onChange={e=>set("search",e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+          />
           {filters.search&&<button className="dh-search-clear" onClick={()=>set("search","")}>✕</button>}
         </div>
       </div>
-      {(activeTags.length>0||filters.search)&&(
+      {hasAnyFilter&&(
         <div className="active-filter-bar">
           <span className="af-label">FILTROS:</span>
+          {searchTags.map((tag,i)=>(
+            <span key={i} className="af-tag" onClick={()=>setFilters(f=>({...f,searchTags:f.searchTags.filter((_,j)=>j!==i)}))}>🔍 "{tag}" ✕</span>
+          ))}
           {filters.search&&<span className="af-tag" onClick={()=>set("search","")}>"{filters.search}" ✕</span>}
           {activeTags.map(tag=>(
             <span key={tag.key} className="af-tag" onClick={()=>{if(tag.key==="amount"){set("amountMin","");set("amountMax","");}else set(tag.key,"all");}}>{tag.label} ✕</span>
@@ -972,6 +1132,7 @@ function KpiCard({ icon, label, value, sub, color, onClick }) {
 
 // ─── COMPARISON PANEL ─────────────────────────
 function ComparisonPanel({ activePeople, filtered }) {
+  const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const stats=activePeople.map(p=>{
     const pTxns=filtered.filter(t=>t.person===p.name);
@@ -993,7 +1154,7 @@ function ComparisonPanel({ activePeople, filtered }) {
       <div className="section-header">
         <div><div className="section-title">💑 Análise Comparativa</div><div className="section-sub">gastos lado a lado</div></div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:`repeat(${stats.length},1fr)`,gap:12,marginBottom:20}}>
+      <div className="comparison-persons-grid">
         {stats.map(s=>(
           <div key={s.name} style={{background:s.color+"10",border:`1px solid ${s.color}30`,borderRadius:12,padding:"14px 16px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -1011,7 +1172,7 @@ function ComparisonPanel({ activePeople, filtered }) {
       {catChartData.length>0&&(
         <>
           <div style={{fontSize:11,color:"var(--text-faint)",marginBottom:10,letterSpacing:".06em"}}>CATEGORIAS COMPARADAS</div>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={isMobile?160:220}>
             <BarChart data={catChartData} margin={{left:-10,right:4}}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
               <XAxis dataKey="cat" tick={{fontSize:9,fill:"var(--text-faint)"}} angle={-20} textAnchor="end" height={44}/>
@@ -1029,6 +1190,7 @@ function ComparisonPanel({ activePeople, filtered }) {
 
 // ─── OVERVIEW TAB ─────────────────────────────
 function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
+  const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const showComparison=activePeople.length>1;
 
@@ -1044,7 +1206,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
       {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered}/>}
 
       {cardStats.length>0&&(
-        <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(cardStats.length,3)},1fr)`,gap:10,marginBottom:14}}>
+        <div className="card-stats-grid">
           {cardStats.map(cs=>{
             const color=CARD_COLORS[cs.card]||"#818cf8";
             const pct=totalExp>0?(cs.total/totalExp*100):0;
@@ -1062,8 +1224,8 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
       <div className="dash-grid">
         <div className="section-card dash-grid-left anim-fade-up">
           <div className="section-header"><div><div className="section-title">Por Categoria</div><div className="section-sub">top 8</div></div><button className="section-action" onClick={()=>setActiveTab("categories")}>ver todas →</button></div>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart><Pie data={catBreakdown.slice(0,8)} dataKey="value" cx="50%" cy="50%" outerRadius={90} innerRadius={48}>{catBreakdown.slice(0,8).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Pie><Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/></PieChart>
+          <ResponsiveContainer width="100%" height={isMobile?170:200}>
+            <PieChart><Pie data={catBreakdown.slice(0,8)} dataKey="value" cx="50%" cy="50%" outerRadius={isMobile?75:90} innerRadius={isMobile?38:48}>{catBreakdown.slice(0,8).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Pie><Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/></PieChart>
           </ResponsiveContainer>
           <div style={{marginTop:8}}>
             {catBreakdown.slice(0,5).map(c=>{
@@ -1075,7 +1237,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
         </div>
         <div className="section-card dash-grid-right anim-fade-up">
           <div className="section-header"><div><div className="section-title">Tendência Mensal</div></div><button className="section-action" onClick={()=>setActiveTab("trends")}>detalhar →</button></div>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={isMobile?160:200}>
             <AreaChart data={monthlyTrend} margin={{left:-10,right:4}}>
               <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/><stop offset="95%" stopColor="#6366f1" stopOpacity={0}/></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
@@ -1088,7 +1250,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
           <div style={{marginTop:16}}>
             <div style={{fontSize:11,color:"var(--text-faint)",letterSpacing:".08em",marginBottom:10}}>TOP ESTABELECIMENTOS</div>
             {topMerchants.slice(0,5).map((m,i)=>(
-              <div key={m.name} className="merch-row tap" onClick={()=>setFilters(f=>({...f,search:m.name.slice(0,20)}))}>
+              <div key={m.name} className="merch-row tap" onClick={()=>setFilters(f=>({...f,searchTags:[...(f.searchTags||[]),m.name.slice(0,20)]}))}>
                 <span className="merch-rank">#{i+1}</span><span className="merch-name">{m.name}</span><span className="merch-count" style={{minWidth:52}}>{m.count}x</span><span className="merch-amount">{fmt(m.total)}</span>
               </div>
             ))}
@@ -1110,8 +1272,9 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalPay, catB
 // ─── TRANSACTIONS TAB ─────────────────────────
 function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople, onDeleteTransaction, onEditCategory }) {
   const [limit,setLimit]=useState(50);
-  const expenses=filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");
-  const total=expenses.reduce((s,t)=>s+t.amount,0);
+  // "expenses" aqui = todos os itens que representam saída de dinheiro no conjunto filtrado
+  const expenses=filtered.filter(t=>Math.abs(t.amount)>0&&t.amount!==0);
+  const total=filtered.reduce((s,t)=>s+Math.abs(t.amount),0);
   return (
     <div className="anim-fade-up">
       <div className="sort-strip">
@@ -1140,23 +1303,24 @@ function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople, 
 
 // ─── CATEGORIES TAB ───────────────────────────
 function CategoriesTab({ catBreakdown, expenses, totalExp, setFilters, setActiveTab }) {
+  const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   return (
     <div className="anim-fade-up">
       <div className="summary-bar" style={{marginBottom:14}}><span className="summary-bar-left">{catBreakdown.length} categorias · {expenses.length} transações</span><span className="summary-bar-right">{fmt(totalExp)}</span></div>
       <div className="section-card" style={{marginBottom:14}}>
         <div className="section-header"><div className="section-title">Distribuição</div></div>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={catBreakdown.slice(0,10)} layout="vertical" margin={{left:4,right:16}}>
+        <ResponsiveContainer width="100%" height={isMobile?220:280}>
+          <BarChart data={catBreakdown.slice(0,isMobile?8:10)} layout="vertical" margin={{left:isMobile?-4:4,right:isMobile?8:16}}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false}/>
-            <XAxis type="number" tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort}/>
-            <YAxis type="category" dataKey="name" tick={{fontSize:10,fill:"var(--text-muted)"}} width={110}/>
+            <XAxis type="number" tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort}/>
+            <YAxis type="category" dataKey="name" tick={{fontSize:isMobile?9:10,fill:"var(--text-muted)"}} width={isMobile?90:110}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
-            <Bar dataKey="value" radius={[0,4,4,0]}>{catBreakdown.slice(0,10).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Bar>
+            <Bar dataKey="value" radius={[0,4,4,0]}>{catBreakdown.slice(0,isMobile?8:10).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:10}}>
+      <div className="cat-cards-grid">
         {catBreakdown.map(cat=>{
           const color=CAT_COLORS[cat.name]||"#6b7280";
           const pct=totalExp>0?((cat.value/totalExp)*100).toFixed(1):"0";
@@ -1180,6 +1344,7 @@ function CategoriesTab({ catBreakdown, expenses, totalExp, setFilters, setActive
 
 // ─── TRENDS TAB ───────────────────────────────
 function TrendsTab({ filtered, monthlyTrend, catBreakdown, uniqueCards, activePeople }) {
+  const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const encargos=filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0);
   const totalEnc=encargos.reduce((s,t)=>s+t.amount,0);
@@ -1189,18 +1354,18 @@ function TrendsTab({ filtered, monthlyTrend, catBreakdown, uniqueCards, activePe
 
   return (
     <div className="anim-fade-up">
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+      <div className="trends-top-grid">
         <KpiCard icon="📅" label="MESES" value={monthlyTrend.length} color="#818cf8"/>
         <KpiCard icon="📉" label="MÉDIA/MÊS" value={fmtShort(monthAvg)} color="#06b6d4"/>
-        <KpiCard icon="🔺" label={`PICO: ${maxMonth.month}`} value={fmtShort(maxMonth.total)} color="#f97316"/>
+        <KpiCard icon="🔺" label={`PICO`} sub={maxMonth.month} value={fmtShort(maxMonth.total)} color="#f97316"/>
       </div>
       <div className="section-card" style={{marginBottom:14}}>
         <div className="section-header"><div className="section-title">{showPersonBars?"Gastos por Pessoa / Mês":"Gastos por Cartão / Mês"}</div></div>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={monthlyTrend} margin={{left:-10,right:4}}>
+        <ResponsiveContainer width="100%" height={isMobile?180:240}>
+          <BarChart data={monthlyTrend} margin={{left:isMobile?-16:-10,right:4}}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
-            <XAxis dataKey="month" tick={{fontSize:9,fill:"var(--text-faint)"}}/>
-            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={48}/>
+            <XAxis dataKey="month" tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} interval={isMobile?"preserveStartEnd":0}/>
+            <YAxis tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={isMobile?38:48}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
             <Legend wrapperStyle={{fontSize:10,fontFamily:"'DM Mono',monospace"}}/>
             {showPersonBars?activePeople.map(p=><Bar key={p.name} dataKey={p.name} stackId="a" fill={p.color} radius={[2,2,0,0]}/>):uniqueCards.map(c=><Bar key={c} dataKey={c} stackId="a" fill={CARD_COLORS[c]||"#818cf8"} radius={[2,2,0,0]}/>)}
@@ -1209,26 +1374,26 @@ function TrendsTab({ filtered, monthlyTrend, catBreakdown, uniqueCards, activePe
       </div>
       <div className="section-card" style={{marginBottom:14}}>
         <div className="section-header"><div className="section-title">Evolução Total</div></div>
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={monthlyTrend} margin={{left:-10,right:4}}>
+        <ResponsiveContainer width="100%" height={isMobile?150:180}>
+          <AreaChart data={monthlyTrend} margin={{left:isMobile?-16:-10,right:4}}>
             <defs><linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.35}/><stop offset="95%" stopColor="#6366f1" stopOpacity={0}/></linearGradient></defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
-            <XAxis dataKey="month" tick={{fontSize:9,fill:"var(--text-faint)"}}/>
-            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={48}/>
+            <XAxis dataKey="month" tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} interval={isMobile?"preserveStartEnd":0}/>
+            <YAxis tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={isMobile?38:48}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
-            <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2.5} fill="url(#totalGrad)" dot={{fill:"#6366f1",r:4,strokeWidth:0}}/>
+            <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2.5} fill="url(#totalGrad)" dot={{fill:"#6366f1",r:isMobile?2:4,strokeWidth:0}}/>
           </AreaChart>
         </ResponsiveContainer>
       </div>
       <div className="section-card" style={{marginBottom:14}}>
         <div className="section-header"><div className="section-title">Top Categorias</div></div>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={catBreakdown.slice(0,8)} margin={{left:-10,right:4}}>
+        <ResponsiveContainer width="100%" height={isMobile?180:220}>
+          <BarChart data={catBreakdown.slice(0,isMobile?6:8)} margin={{left:isMobile?-16:-10,right:4}}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)"/>
-            <XAxis dataKey="name" tick={{fontSize:9,fill:"var(--text-faint)"}} angle={-25} textAnchor="end" height={52}/>
-            <YAxis tick={{fontSize:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={48}/>
+            <XAxis dataKey="name" tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} angle={-25} textAnchor="end" height={isMobile?44:52}/>
+            <YAxis tick={{fontSize:isMobile?8:9,fill:"var(--text-faint)"}} tickFormatter={fmtShort} width={isMobile?38:48}/>
             <Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/>
-            <Bar dataKey="value" radius={[4,4,0,0]}>{catBreakdown.slice(0,8).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Bar>
+            <Bar dataKey="value" radius={[4,4,0,0]}>{catBreakdown.slice(0,isMobile?6:8).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -1272,28 +1437,42 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortBy,     setSortBy]     = useState("date");
   const [sortDir,    setSortDir]    = useState("desc");
-  const [filters, setFilters] = useState({search:"",selectedPerson:"all",selectedCard:"all",selectedYear:"all",selectedMonth:"all",categoryFilter:"all",txnType:"all",amountMin:"",amountMax:""});
+  const [filters, setFilters] = useState({
+    search:"", searchTags:[],
+    selectedPerson:"all", selectedCard:"all",
+    selectedYear:"all", selectedMonth:"all",
+    categoryFilter:"all", txnType:"all",
+    amountMin:"", amountMax:"",
+  });
 
   const cards   = useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
   const years   = useMemo(()=>[...new Set(transactions.map(t=>t.year).filter(Boolean))].sort(),[transactions]);
-  // Filter out year-only month labels (e.g. "2025", "2026")
+  // Filter out year-only month labels (e.g. "2025", "2026") — keep only "Mmm/YYYY"
   const months  = useMemo(()=>{
     const parseM=s=>{const p=s.match(/(\w+)\/(\d{4})/);if(!p)return 0;const mo={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};return parseInt(p[2])*100+(mo[p[1].toLowerCase().slice(0,3)]||0);};
     return [...new Set(transactions.map(t=>t.month))]
-      .filter(m => m && !/^\d{4}$/.test(m))
+      .filter(m => m && /^[A-Za-z]{3}\/\d{4}$/.test(m))  // só aceita formato normalizado
       .sort((a,b)=>parseM(a)-parseM(b));
   },[transactions]);
   const uniqueCards=useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
 
   const filtered=useMemo(()=>{
-    const {search,selectedPerson,selectedCard,selectedYear,selectedMonth,categoryFilter,txnType,amountMin,amountMax}=filters;
+    const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
+    // Junta tags confirmadas + texto atual → match em qualquer uma (OR)
+    const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];
+
     return transactions.filter(t=>{
       if(selectedPerson!=="all"&&t.person!==selectedPerson) return false;
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
+      // ── FIX: filtra estritamente pelo campo month (= mês da fatura) ──
       if(selectedMonth!=="all"&&t.month!==selectedMonth) return false;
       if(categoryFilter!=="all"&&t.category!==categoryFilter) return false;
-      if(search&&!t.title.toLowerCase().includes(search.toLowerCase())&&!t.category.toLowerCase().includes(search.toLowerCase())) return false;
+      // Multi-search: qualquer tag deve estar no título ou categoria
+      if(allTerms.length>0 && !allTerms.some(term=>
+        t.title.toLowerCase().includes(term.toLowerCase()) ||
+        t.category.toLowerCase().includes(term.toLowerCase())
+      )) return false;
       if(txnType==="expense"&&!(t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros")) return false;
       if(txnType==="payment"&&t.category!=="Pagamento") return false;
       if(txnType==="charge"&&t.category!=="Encargos/Juros") return false;
@@ -1307,11 +1486,24 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     });
   },[transactions,filters,sortBy,sortDir]);
 
-  const expenses     = useMemo(()=>filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros"),[filtered]);
-  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+t.amount,0),[expenses]);
+  const expenses     = useMemo(()=>{
+    if(filters.txnType==="charge")  return filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0);
+    if(filters.txnType==="payment") return filtered.filter(t=>t.category==="Pagamento"||t.amount<0);
+    return filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");
+  },[filtered,filters.txnType]);
+  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+Math.abs(t.amount),0),[expenses]);
   const totalCharge  = useMemo(()=>filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0),[filtered]);
   const totalPay     = useMemo(()=>filtered.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0),[filtered]);
-  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
+  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+Math.abs(t.amount);});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
+  // catStats: todas as categorias com % — sempre baseado em gastos reais (sem filtro de categoria)
+  // para o sidebar mostrar porcentagens corretas independente do filtro ativo
+  const catStats = useMemo(()=>{
+    const base=filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros");
+    const total=base.reduce((s,t)=>s+t.amount,0);
+    const map={};
+    base.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});
+    return {map,total};
+  },[filtered]);
   const monthlyTrend = useMemo(()=>{
     const map={};
     filtered.filter(t=>t.amount>0&&t.category!=="Pagamento"&&t.category!=="Encargos/Juros").forEach(t=>{
@@ -1339,7 +1531,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   return (
     <div className="app-shell">
-      <FilterSidebar activeTab={activeTab} setActiveTab={setActiveTab} filters={filters} setFilters={setFilters} activePeople={activePeople} cards={cards} years={years} months={months} totalCount={filtered.length} dark={dark} toggleTheme={toggleTheme} onReset={onReset}/>
+      <FilterSidebar activeTab={activeTab} setActiveTab={setActiveTab} filters={filters} setFilters={setFilters} activePeople={activePeople} cards={cards} years={years} months={months} totalCount={filtered.length} catStats={catStats} dark={dark} toggleTheme={toggleTheme} onReset={onReset}/>
       <div className="main-area">
         <DesktopHeader activeTab={activeTab} filters={filters} setFilters={setFilters} activePeople={activePeople} txnCount={filtered.length}/>
         <MobileHeader filters={filters} setFilters={setFilters} activePeople={activePeople} txnCount={filtered.length} dark={dark} toggleTheme={toggleTheme} onOpenFilter={()=>setFilterOpen(true)} onReset={onReset}/>
