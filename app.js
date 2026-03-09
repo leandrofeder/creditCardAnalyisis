@@ -160,10 +160,16 @@ async function parsePDF(file, personName) {
   const monthPart=ptMap[rawM]||(!isYearOnly?rawM:null)||fileBase;
   const monthLabel=normalizeMonthLabel(`${monthPart}/${year}`);
   const txns=[];
-  const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};
-  if(isAilos){
+  const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};  if(isAilos){
     const matches=[...text.matchAll(/(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+([^R\n]{3,60}?)\s+R\$\s*([\d.]+,\d{2})/gi)];
-    for(const m of matches){const amount=parseFloat(m[4].replace(/\./g,"").replace(",","."));const title=m[3].replace(/\s{2,}/g," ").trim();if(!isNaN(amount)&&amount>0&&title.length>1)txns.push({date:`${year}-${ptNum[m[2].toUpperCase()]||"01"}-${m[1].padStart(2,"0")}`,title,amount,card,month:monthLabel,year,category:categorize(title),person:personName});}
+    for(const m of matches){
+      const amount=parseFloat(m[4].replace(/\./g,"").replace(",","."));
+      const title=m[3].replace(/\s{2,}/g," ").trim();
+      // ignora títulos que são apenas um ano (ex: "2025", "2026") — parcela mínima do Ailos
+      if(/^\d{4}$/.test(title)) continue;
+      if(!isNaN(amount)&&amount>0&&title.length>1)
+        txns.push({date:`${year}-${ptNum[m[2].toUpperCase()]||"01"}-${m[1].padStart(2,"0")}`,title,amount,card,month:monthLabel,year,category:categorize(title),person:personName});
+    }
   }
   if(isInter){
     const ptM={jan:"01",fev:"02",mar:"03",abr:"04",mai:"05",jun:"06",jul:"07",ago:"08",set:"09",out:"10",nov:"11",dez:"12"};
@@ -187,6 +193,8 @@ function isExcludedTransaction(t) {
   if (EXCLUDED_TITLES.some(ex => tl.includes(ex))) return true;
   // exclui qualquer transação categorizada como Pagamento
   if (t.category === "Pagamento") return true;
+  // exclui títulos que são somente um ano (ex: "2025", "2026") — parcela mínima Ailos
+  if (/^\d{4}$/.test(t.title.trim())) return true;
   return false;
 }
 
@@ -1328,6 +1336,8 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       if(t.amount<=0) return false;
       if(t.category==="Pagamento") return false;
       if(EXCLUDED_TITLES.some(ex=>t.title.toLowerCase().includes(ex))) return false;
+      // exclui títulos que são somente um ano (ex: "2025", "2026") — parcela mínima Ailos
+      if(/^\d{4}$/.test(t.title.trim())) return false;
       if(txnType==="expense"&&t.category==="Encargos/Juros") return false;
       if(txnType==="charge"&&t.category!=="Encargos/Juros") return false;
       if(amountMin&&Math.abs(t.amount)<parseFloat(amountMin)) return false;
