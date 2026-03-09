@@ -56,7 +56,7 @@ const CAT_COLORS = {
   "Cafés/Pequenos":"#fb923c","Conveniência":"#c026d3","Parcelamentos":"#64748b",
   "Encargos/Juros":"#ef4444","Estacionamento":"#94a3b8",
   "Presentes/Bazar":"#f43f5e","Educação":"#0ea5e9","Telecomunicações":"#38bdf8",
-  "Seguros":"#d97706","Outros":"#6b7280",
+  "Seguros":"#d97706","Beleza":"#f472b6","Pet":"#84cc16","Outros":"#6b7280",
 };
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
@@ -66,6 +66,8 @@ const CAT_GROUPS = [
   { label:"🚗 Transporte",   cats:["Transporte","Gasolina","Estacionamento"] },
   { label:"🏥 Saúde",        cats:["Saúde","Academia/Saúde"] },
   { label:"💻 Digital",      cats:["Tecnologia/Assinaturas","Compras Online"] },
+  { label:"💅 Beleza",       cats:["Beleza"] },
+  { label:"🐾 Pet",          cats:["Pet"] },
 ];
 
 const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -104,8 +106,9 @@ function categorize(title) {
   if(t.includes("estacionamento")||t.includes("estapar")||t.includes("blumenau norte shoppin")||t.includes("parking")||t.includes("cs park")) return "Estacionamento";
   if(t.includes("bazar")||t.includes("reuter")||t.includes("tecnofesta")||t.includes("milium")||t.includes("cacau")||t.includes("oboticario")||t.includes("havan")||t.includes("floricultura")) return "Presentes/Bazar";
   if(t.includes("leiturinha")||t.includes("escola")||t.includes("universidade")||t.includes("curso")) return "Educação";
-  if(t.includes("vivo")||t.includes("intercel")||t.includes("rcga")||t.includes("claro")||t.includes("tim ")||t.includes("oi ")) return "Telecomunicações";
-  if(t.includes("allianz")||t.includes("seguro")||t.includes("bradesco seguros")) return "Seguros";
+  if(t.includes("vivo")||t.includes("intercel")||t.includes("rcga")||t.includes("claro")||t.includes("tim ")||t.includes("oi ")) return "Telecomunicações";  if(t.includes("allianz")||t.includes("seguro")||t.includes("bradesco seguros")) return "Seguros";
+  if(t.includes("salao")||t.includes("salão")||t.includes("barbearia")||t.includes("barbeiro")||t.includes("cabeleireiro")||t.includes("cabeleireira")||t.includes("beleza")||t.includes("estetica")||t.includes("estética")||t.includes("manicure")||t.includes("pedicure")||t.includes("sobrancelha")||t.includes("depilacao")||t.includes("depilação")||t.includes("spa ")||t.includes("nail ")||t.includes("beauty")||t.includes("studio hair")||t.includes("hair ")) return "Beleza";
+  if(t.includes("pet")||t.includes("veterinario")||t.includes("veterinária")||t.includes("veterinario")||t.includes("veterinário")||t.includes("petshop")||t.includes("pet shop")||t.includes("racao")||t.includes("ração")||t.includes("agro")||t.includes("clinica vet")||t.includes("animal")||t.includes("canil")||t.includes("cobasi")) return "Pet";
   return "Outros";
 }
 
