@@ -60,10 +60,17 @@ const CAT_COLORS = {
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
 
+// ─── CATEGORY GROUPS (for quick-select presets) ──
+const CAT_GROUPS = [
+  { label:"🍽️ Alimentação", cats:["Supermercado","Gastronomia","Delivery","Padaria/Alimentação","Cafés/Pequenos","Conveniência"] },
+  { label:"🚗 Transporte",   cats:["Transporte","Gasolina","Estacionamento"] },
+  { label:"🏥 Saúde",        cats:["Saúde","Academia/Saúde"] },
+  { label:"💻 Digital",      cats:["Tecnologia/Assinaturas","Compras Online"] },
+];
+
 // ─── PT MONTHS HELPER ─────────────────────────
 const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-// normaliza qualquer label de mês para "Mmm/YYYY"
 function normalizeMonthLabel(raw) {
   if (!raw) return raw;
   if (/^[A-Za-z]{3}\/\d{4}$/.test(raw)) return raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -167,7 +174,6 @@ async function parsePDF(file, personName) {
   return txns;
 }
 
-// Títulos que indicam crédito/pagamento — não são gastos, não devem aparecer em lugar nenhum
 const EXCLUDED_TITLES = [
   "pagamento recebido","pagamento efetuado","crédito em rotativo",
   "credito em rotativo","saldo em rotativo","crédito rotativo",
@@ -329,7 +335,7 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
   const canJoin = people.length >= 2;
 
   const stats = people.map(p => {
-    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento"&&!EXCLUDED_TITLES.some(ex=>t.title.toLowerCase().includes(ex)));
+    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
     return {...p, total:exp.reduce((s,t)=>s+t.amount,0), count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
   });
 
@@ -514,7 +520,7 @@ function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
 }
 
 // ═══════════════════════════════════════════════
-//  UPLOAD SCREEN — two-step: name then files
+//  UPLOAD SCREEN
 // ═══════════════════════════════════════════════
 function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
   const [step,        setStep]        = useState("name");
@@ -739,18 +745,131 @@ function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar�
   );
 }
 
+// ─── CATEGORY FILTER SECTION (shared) ────────
+// Used in both FilterSidebar and FilterDrawer
+function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=false }) {
+  const cats = categoryFilter || [];
+  
+  const toggleCat = name => {
+    setFilters(f => {
+      const current = f.categoryFilter || [];
+      const next = current.includes(name)
+        ? current.filter(c => c !== name)
+        : [...current, name];
+      return {...f, categoryFilter: next};
+    });
+  };
+
+  const applyGroup = groupCats => {
+    setFilters(f => {
+      const current = f.categoryFilter || [];
+      // If all group cats already selected, deselect them; otherwise select all
+      const allSelected = groupCats.every(c => current.includes(c));
+      if (allSelected) {
+        return {...f, categoryFilter: current.filter(c => !groupCats.includes(c))};
+      } else {
+        const merged = [...new Set([...current, ...groupCats])];
+        return {...f, categoryFilter: merged};
+      }
+    });
+  };
+
+  const clearAll = () => setFilters(f => ({...f, categoryFilter: []}));
+
+  // Combined total for selected cats
+  const selectedTotal = cats.length > 0 && catStats
+    ? cats.reduce((s, c) => s + (catStats.map[c] || 0), 0)
+    : 0;
+
+  return (
+    <div>
+      {/* Quick-select group presets */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
+        {CAT_GROUPS.map(g => {
+          const allSel = g.cats.every(c => cats.includes(c));
+          const someSel = g.cats.some(c => cats.includes(c));
+          return (
+            <button
+              key={g.label}
+              className="tap"
+              onClick={() => applyGroup(g.cats)}
+              style={{
+                padding:"4px 9px",borderRadius:7,fontSize:10,
+                border:`1px solid ${allSel?"var(--accent-border)":someSel?"var(--accent-border)":"var(--border-med)"}`,
+                background: allSel?"var(--accent-glow)":someSel?"var(--accent-glow)":"var(--bg-input)",
+                color: (allSel||someSel)?"var(--accent-text)":"var(--text-dim)",
+                cursor:"pointer",whiteSpace:"nowrap",
+                fontFamily:"'DM Mono',monospace",
+                opacity: someSel&&!allSel ? 0.85 : 1,
+              }}>
+              {g.label}{someSel&&!allSel?" ·":""}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Combined total banner */}
+      {cats.length > 1 && catStats && selectedTotal > 0 && (
+        <div style={{
+          marginBottom:10,padding:"7px 10px",borderRadius:8,
+          background:"var(--accent-glow)",border:"1px solid var(--accent-border)",
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+        }}>
+          <span style={{fontSize:10,color:"var(--accent-text)"}}>{cats.length} categorias</span>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:500,color:"var(--accent-text)"}}>{fmtShort(selectedTotal)}</span>
+        </div>
+      )}
+
+      {/* "Todas" chip + individual chips */}
+      <div className="chips-row">
+        <button
+          className={`chip tap${cats.length===0?" active":""}`}
+          onClick={clearAll}>
+          Todas
+        </button>
+        {Object.entries(CAT_COLORS).map(([name, color]) => {
+          const val = catStats?.map?.[name] || 0;
+          const pct = catStats?.total > 0 ? ((val/catStats.total)*100).toFixed(0) : 0;
+          const isEmpty = val === 0;
+          const isActive = cats.includes(name);
+          return (
+            <button
+              key={name}
+              className={`cat-chip tap${isActive?" active":""}`}
+              onClick={() => toggleCat(name)}
+              style={isActive
+                ? {borderColor:color+"60",background:color+"20",color,opacity:1}
+                : isEmpty ? {opacity:.35} : {}
+              }>
+              <span className="dot" style={{background:color}}/>
+              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
+              {!isEmpty && (
+                <span style={{
+                  fontSize:9,flexShrink:0,marginLeft:4,
+                  color: isActive ? "inherit" : color,
+                  opacity:.85,fontWeight:500,
+                }}>{pct}%</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── FILTER SIDEBAR ───────────────────────────
 function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeople, cards, years, months, totalCount, catStats, dark, toggleTheme, onReset }) {
-  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
+  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter!=="all" || txnType!=="all" || !!amountMin || !!amountMax;
+  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter.length>0 || txnType!=="all" || !!amountMin || !!amountMax;
   const filterCount = [
     search, searchTags.length > 0,
     selectedPerson!=="all", selectedCard!=="all", selectedYear!=="all",
-    selectedMonth!=="all", categoryFilter!=="all", txnType!=="all",
+    selectedMonth!=="all", categoryFilter.length>0, txnType!=="all",
     !!amountMin, !!amountMax,
   ].filter(Boolean).length;
-  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:[], txnType:"all", amountMin:"", amountMax:""}));
   const filteredMonths = useMemo(()=>{
     const base=["all",...months.filter(m=>m!=="all")];
     if(selectedYear==="all") return base;
@@ -842,34 +961,20 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
         </div>
 
         <div className="filter-section">
-          <div className="filter-label">CATEGORIA {categoryFilter!=="all"&&<button className="filter-label-clear" onClick={()=>set("categoryFilter","all")}>limpar</button>}</div>
-          <div className="chips-row">
-            <button className={`chip tap${categoryFilter==="all"?" active":""}`} onClick={()=>set("categoryFilter","all")}>Todas</button>
-            {Object.entries(CAT_COLORS).map(([name,color])=>{
-              const val = catStats?.map?.[name] || 0;
-              const pct = catStats?.total > 0 ? ((val/catStats.total)*100).toFixed(0) : 0;
-              const isEmpty = val === 0;
-              return (
-                <button key={name}
-                  className={`cat-chip tap${categoryFilter===name?" active":""}`}
-                  onClick={()=>set("categoryFilter",name)}
-                  style={categoryFilter===name
-                    ? {borderColor:color+"60",background:color+"15",color,opacity:1}
-                    : isEmpty ? {opacity:.35} : {}
-                  }>
-                  <span className="dot" style={{background:color}}/>
-                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
-                  {!isEmpty && (
-                    <span style={{
-                      fontSize:9,flexShrink:0,marginLeft:4,
-                      color: categoryFilter===name ? "inherit" : color,
-                      opacity:.85,fontWeight:500,
-                    }}>{pct}%</span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="filter-label">
+            CATEGORIA
+            {categoryFilter.length>0&&(
+              <button className="filter-label-clear" onClick={()=>set("categoryFilter",[])}>
+                limpar {categoryFilter.length > 1 ? `(${categoryFilter.length})` : ""}
+              </button>
+            )}
           </div>
+          <CategoryFilterSection
+            categoryFilter={categoryFilter}
+            setFilters={setFilters}
+            catStats={catStats}
+            compact
+          />
         </div>
       </div>
 
@@ -888,7 +993,14 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
           {selectedYear!=="all"&&<span className="active-filter-tag" onClick={()=>set("selectedYear","all")}>{selectedYear} ✕</span>}
           {selectedMonth!=="all"&&<span className="active-filter-tag" onClick={()=>set("selectedMonth","all")}>{selectedMonth} ✕</span>}
           {txnType!=="all"&&<span className="active-filter-tag" onClick={()=>set("txnType","all")}>{txnType} ✕</span>}
-          {categoryFilter!=="all"&&<span className="active-filter-tag" onClick={()=>set("categoryFilter","all")}>{categoryFilter} ✕</span>}
+          {categoryFilter.map(c=>(
+            <span key={c} className="active-filter-tag"
+              style={{background:(CAT_COLORS[c]||"#6b7280")+"18",borderColor:(CAT_COLORS[c]||"#6b7280")+"40",color:CAT_COLORS[c]||"#6b7280"}}
+              onClick={()=>setFilters(f=>({...f,categoryFilter:f.categoryFilter.filter(x=>x!==c)}))}>
+              <span style={{width:6,height:6,borderRadius:2,background:CAT_COLORS[c]||"#6b7280",display:"inline-block",marginRight:2}}/>
+              {c} ✕
+            </span>
+          ))}
           {(amountMin||amountMax)&&<span className="active-filter-tag" onClick={()=>{set("amountMin","");set("amountMax","");}}>R${amountMin||"0"}–{amountMax||"∞"} ✕</span>}
         </div>
       )}
@@ -905,12 +1017,12 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
 function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggleTheme, onOpenFilter, onReset }) {
   const [showSearch, setShowSearch] = useState(false);
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const { searchTags=[] } = filters;
+  const { searchTags=[], categoryFilter=[] } = filters;
   const filterCount = [
     filters.search, searchTags.length > 0,
     filters.selectedPerson!=="all", filters.selectedCard!=="all",
     filters.selectedYear!=="all", filters.selectedMonth!=="all",
-    filters.categoryFilter!=="all", filters.txnType!=="all",
+    categoryFilter.length>0, filters.txnType!=="all",
     !!filters.amountMin, !!filters.amountMax,
   ].filter(Boolean).length;
   const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
@@ -953,7 +1065,12 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
           {filters.selectedCard!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedCard","all")}>{filters.selectedCard} ✕</span>}
           {filters.selectedYear!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedYear","all")}>{filters.selectedYear} ✕</span>}
           {filters.selectedMonth!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("selectedMonth","all")}>{filters.selectedMonth} ✕</span>}
-          {filters.categoryFilter!=="all"&&<span className="chip active" style={{fontSize:10}} onClick={()=>set("categoryFilter","all")}>{filters.categoryFilter} ✕</span>}
+          {categoryFilter.map(c=>(
+            <span key={c} className="chip active" style={{fontSize:10,background:(CAT_COLORS[c]||"#6b7280")+"20",borderColor:(CAT_COLORS[c]||"#6b7280")+"40",color:CAT_COLORS[c]||"#6b7280"}}
+              onClick={()=>setFilters(f=>({...f,categoryFilter:f.categoryFilter.filter(x=>x!==c)}))}>
+              {c} ✕
+            </span>
+          ))}
         </div>
       )}
     </div>
@@ -961,12 +1078,12 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
 }
 
 // ─── MOBILE FILTER DRAWER ─────────────────────
-function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards, years, months }) {
+function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards, years, months, catStats }) {
   if(!open) return null;
-  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
+  const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter!=="all" || txnType!=="all" || !!amountMin || !!amountMax;
-  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
+  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter.length>0 || txnType!=="all" || !!amountMin || !!amountMax;
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:[], txnType:"all", amountMin:"", amountMax:""}));
   const filteredMonths = selectedYear==="all"?["all",...months.filter(m=>m!=="all")]:["all",...months.filter(m=>m!=="all"&&m.endsWith(selectedYear))];
   return (
     <>
@@ -1032,15 +1149,19 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
             </div>
           </div>
           <div className="filter-section">
-            <div className="filter-label">CATEGORIA</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              <button className={`chip tap${categoryFilter==="all"?" active":""}`} onClick={()=>set("categoryFilter","all")} style={{gridColumn:"1/-1"}}>Todas</button>
-              {Object.entries(CAT_COLORS).map(([name,color])=>(
-                <button key={name} className={`cat-chip tap${categoryFilter===name?" active":""}`} onClick={()=>set("categoryFilter",name)} style={categoryFilter===name?{borderColor:color+"60",background:color+"15",color}:{}}>
-                  <span className="dot" style={{background:color}}/><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
+            <div className="filter-label">
+              CATEGORIA
+              {categoryFilter.length>0&&(
+                <button className="filter-label-clear" onClick={()=>set("categoryFilter",[])}>
+                  limpar {categoryFilter.length > 1 ? `(${categoryFilter.length})` : ""}
                 </button>
-              ))}
+              )}
             </div>
+            <CategoryFilterSection
+              categoryFilter={categoryFilter}
+              setFilters={setFilters}
+              catStats={catStats}
+            />
           </div>
           <button className="drawer-apply-btn tap-btn" onClick={onClose}>Aplicar filtros</button>
         </div>
@@ -1052,21 +1173,20 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
 // ─── DESKTOP HEADER ───────────────────────────
 function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount }) {
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const { searchTags=[] } = filters;
+  const { searchTags=[], categoryFilter=[] } = filters;
   const tabTitles={overview:"Visão Geral",transactions:"Transações",categories:"Categorias",trends:"Tendências"};
-  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:"all", txnType:"all", amountMin:"", amountMax:""}));
+  const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:[], txnType:"all", amountMin:"", amountMax:""}));
   const activeTags=[
     filters.selectedPerson!=="all"&&{key:"selectedPerson",label:`Pessoa: ${filters.selectedPerson}`},
     filters.selectedCard!=="all"&&{key:"selectedCard",label:`Cartão: ${filters.selectedCard}`},
     filters.selectedYear!=="all"&&{key:"selectedYear",label:`Ano: ${filters.selectedYear}`},
     filters.selectedMonth!=="all"&&{key:"selectedMonth",label:`Mês: ${filters.selectedMonth}`},
     filters.txnType!=="all"&&{key:"txnType",label:`Tipo: ${filters.txnType}`},
-    filters.categoryFilter!=="all"&&{key:"categoryFilter",label:`Cat: ${filters.categoryFilter}`},
     (filters.amountMin||filters.amountMax)&&{key:"amount",label:`R$${filters.amountMin||"0"}–${filters.amountMax||"∞"}`},
   ].filter(Boolean);
   const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
   const viewLabel = activePerson?activePerson.name:activePeople.length>1?"Juntos":activePeople[0]?.name||"";
-  const hasAnyFilter = !!filters.search || searchTags.length > 0 || activeTags.length > 0;
+  const hasAnyFilter = !!filters.search || searchTags.length > 0 || activeTags.length > 0 || categoryFilter.length > 0;
 
   const handleSearchKeyDown = e => {
     if (e.key === "Enter" && filters.search.trim()) {
@@ -1113,6 +1233,14 @@ function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount 
           {filters.search&&<span className="af-tag" onClick={()=>set("search","")}>"{filters.search}" ✕</span>}
           {activeTags.map(tag=>(
             <span key={tag.key} className="af-tag" onClick={()=>{if(tag.key==="amount"){set("amountMin","");set("amountMax","");}else set(tag.key,"all");}}>{tag.label} ✕</span>
+          ))}
+          {categoryFilter.map(c=>(
+            <span key={c} className="af-tag"
+              style={{background:(CAT_COLORS[c]||"#6b7280")+"15",borderColor:(CAT_COLORS[c]||"#6b7280")+"40",color:CAT_COLORS[c]||"#6b7280"}}
+              onClick={()=>setFilters(f=>({...f,categoryFilter:f.categoryFilter.filter(x=>x!==c)}))}>
+              <span style={{width:6,height:6,borderRadius:2,background:CAT_COLORS[c]||"#6b7280",display:"inline-block",marginRight:3}}/>
+              {c} ✕
+            </span>
           ))}
           <button className="af-clear-all" onClick={clearAll}>Limpar tudo</button>
         </div>
@@ -1234,7 +1362,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
             {catBreakdown.slice(0,5).map(c=>{
               const color=CAT_COLORS[c.name]||"#6b7280";
               const pct=totalExp>0?((c.value/totalExp)*100).toFixed(1):"0";
-              return (<div key={c.name} className="cat-breakdown-item tap" onClick={()=>{setFilters(f=>({...f,categoryFilter:c.name}));setActiveTab("transactions");}}><span className="cat-dot" style={{background:color}}/><span className="cat-name">{c.name}</span><span className="cat-pct">{pct}%</span><span className="cat-amt">{fmt(c.value)}</span></div>);
+              return (<div key={c.name} className="cat-breakdown-item tap" onClick={()=>{setFilters(f=>({...f,categoryFilter:[c.name]}));setActiveTab("transactions");}}><span className="cat-dot" style={{background:color}}/><span className="cat-name">{c.name}</span><span className="cat-pct">{pct}%</span><span className="cat-amt">{fmt(c.value)}</span></div>);
             })}
           </div>
         </div>
@@ -1275,9 +1403,8 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
 // ─── TRANSACTIONS TAB ─────────────────────────
 function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople, onDeleteTransaction, onEditCategory }) {
   const [limit,setLimit]=useState(50);
-  // ── FIX: expenses = gastos reais (sem encargos); total só soma gastos, não tudo
-  const expenses=filtered.filter(t=>t.category!=="Encargos/Juros");
-  const total=expenses.reduce((s,t)=>s+t.amount,0);
+  const expenses=filtered.filter(t=>Math.abs(t.amount)>0&&t.amount!==0);
+  const total=filtered.reduce((s,t)=>s+Math.abs(t.amount),0);
   return (
     <div className="anim-fade-up">
       <div className="sort-strip">
@@ -1330,7 +1457,7 @@ function CategoriesTab({ catBreakdown, expenses, totalExp, setFilters, setActive
           const catTxns=expenses.filter(t=>t.category===cat.name);
           const top=catTxns.sort((a,b)=>b.amount-a.amount)[0];
           return (
-            <div key={cat.name} className="section-card tap anim-fade-up" style={{cursor:"pointer"}} onClick={()=>{setFilters(f=>({...f,categoryFilter:cat.name}));setActiveTab("transactions");}}>
+            <div key={cat.name} className="section-card tap anim-fade-up" style={{cursor:"pointer"}} onClick={()=>{setFilters(f=>({...f,categoryFilter:[cat.name]}));setActiveTab("transactions");}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}><span className="cat-dot" style={{background:color,width:11,height:11}}/><span style={{fontFamily:"'Syne',sans-serif",fontSize:13,fontWeight:700,color:"var(--text-primary)"}}>{cat.name}</span></div>
                 <div style={{textAlign:"right"}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:500,color}}>{fmt(cat.value)}</div><div style={{fontSize:9,color:"var(--text-faint)"}}>{pct}% · {catTxns.length} itens</div></div>
@@ -1444,7 +1571,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     search:"", searchTags:[],
     selectedPerson:"all", selectedCard:"all",
     selectedYear:"all", selectedMonth:"all",
-    categoryFilter:"all", txnType:"all",
+    categoryFilter:[], txnType:"all",
     amountMin:"", amountMax:"",
   });
 
@@ -1459,23 +1586,16 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
   const uniqueCards=useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
 
   const filtered=useMemo(()=>{
-    const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
+    const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
     const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];
 
     return transactions.filter(t=>{
-      // ── RE-APLICA EXCLUSÕES EM DADOS JÁ SALVOS NO LOCALSTORAGE ──
-      // Garante que pagamentos/créditos com amount<=0 ou títulos excluídos
-      // (que podem ter sido salvos antes desta versão) não entrem nos cálculos
-      if(t.amount <= 0) return false;
-      if(EXCLUDED_TITLES.some(ex => t.title.toLowerCase().includes(ex))) return false;
-      // Categoria "Pagamento" também é crédito, nunca deve aparecer como gasto
-      if(t.category === "Pagamento") return false;
-
       if(selectedPerson!=="all"&&t.person!==selectedPerson) return false;
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
       if(selectedMonth!=="all"&&t.month!==selectedMonth) return false;
-      if(categoryFilter!=="all"&&t.category!==categoryFilter) return false;
+      // Multi-category filter: show transaction if its category is in the selected list
+      if(categoryFilter.length>0&&!categoryFilter.includes(t.category)) return false;
       if(allTerms.length>0 && !allTerms.some(term=>
         t.title.toLowerCase().includes(term.toLowerCase()) ||
         t.category.toLowerCase().includes(term.toLowerCase())
@@ -1496,9 +1616,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     if(filters.txnType==="charge") return filtered.filter(t=>t.category==="Encargos/Juros");
     return filtered.filter(t=>t.category!=="Encargos/Juros");
   },[filtered,filters.txnType]);
-
-  // ── FIX: sem Math.abs — filtered já garante amount > 0
-  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+t.amount,0),[expenses]);
+  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+Math.abs(t.amount),0),[expenses]);
   const totalCharge  = useMemo(()=>filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0),[filtered]);
   const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
   const catStats = useMemo(()=>{
@@ -1542,7 +1660,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
         <div className="content-wrap">{tabContent()}</div>
       </div>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab}/>
-      <FilterDrawer open={filterOpen} onClose={()=>setFilterOpen(false)} filters={filters} setFilters={setFilters} activePeople={activePeople} cards={cards} years={years} months={months}/>
+      <FilterDrawer open={filterOpen} onClose={()=>setFilterOpen(false)} filters={filters} setFilters={setFilters} activePeople={activePeople} cards={cards} years={years} months={months} catStats={catStats}/>
     </div>
   );
 }
