@@ -25,11 +25,11 @@ img { display: block; }
   --border-med:     #1e1e3a;
   --border-strong:  #2a2a4a;
   --text-primary:   #f0f0ff;
-  --text-sec:       #c8c8e8;
-  --text-muted:     #8888b0;
-  --text-dim:       #555575;
-  --text-faint:     #333355;
-  --text-ghost:     #1e1e35;
+  --text-sec:       #d0d0f0;
+  --text-muted:     #a8a8cc;
+  --text-dim:       #8080a8;
+  --text-faint:     #606088;
+  --text-ghost:     #404060;
   --accent:         #6366f1;
   --accent-glow:    rgba(99,102,241,0.15);
   --accent-border:  rgba(99,102,241,0.4);
