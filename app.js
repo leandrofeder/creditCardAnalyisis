@@ -981,11 +981,15 @@ function KpiCard({ icon, label, value, sub, color, onClick }) {
 }
 
 // ─── COMPARISON PANEL ─────────────────────────
-function ComparisonPanel({ activePeople, filtered }) {
+function ComparisonPanel({ activePeople, filtered, txnType }) {
   const isMobile = useWindowWidth() < 768;
-  const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};  const stats=activePeople.map(p=>{
+  const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
+  const isCharge = txnType === "charge";
+  const stats=activePeople.map(p=>{
     const pTxns=filtered.filter(t=>t.person===p.name);
-    const exp=pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+    const exp = isCharge
+      ? pTxns.filter(t=>t.amount>0&&t.category==="Encargos/Juros")
+      : pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     const total=exp.reduce((s,t)=>s+t.amount,0);
     const cats={};exp.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount;});
     const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
@@ -994,7 +998,13 @@ function ComparisonPanel({ activePeople, filtered }) {
   const maxTotal=Math.max(...stats.map(s=>s.total),1);
   const catChartData=Object.keys(CAT_COLORS).map(cat=>{
     const entry={cat:cat.split("/")[0]};
-    stats.forEach(s=>{entry[s.name]=+filtered.filter(t=>t.person===s.name&&t.category===cat&&t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento").reduce((sum,t)=>sum+t.amount,0).toFixed(2);});
+    stats.forEach(s=>{
+      entry[s.name]=+filtered.filter(t=>{
+        if(t.person!==s.name||t.category!==cat||t.amount<=0) return false;
+        if(isCharge) return t.category==="Encargos/Juros";
+        return t.category!=="Encargos/Juros"&&t.category!=="Pagamento";
+      }).reduce((sum,t)=>sum+t.amount,0).toFixed(2);
+    });
     return entry;
   }).filter(d=>stats.some(s=>d[s.name]>0)).sort((a,b)=>stats.reduce((s,p)=>s+(b[p.name]||0),0)-stats.reduce((s,p)=>s+(a[p.name]||0),0)).slice(0,8);
 
@@ -1038,7 +1048,7 @@ function ComparisonPanel({ activePeople, filtered }) {
 }
 
 // ─── OVERVIEW TAB ─────────────────────────────
-function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
+function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory, txnType }) {
   const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const showComparison=activePeople.length>1;
@@ -1052,7 +1062,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
         <KpiCard icon="🛒" label="COMPRAS"         value={expenses.length} sub="transações" color="#06b6d4"/>
       </div>
 
-      {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered}/>}
+      {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered} txnType={txnType}/>}
 
       {cardStats.length>0&&(
         <div className="card-stats-grid">
@@ -1371,7 +1381,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   const tabContent=()=>{
     switch(activeTab){
-      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
+      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory} txnType={filters.txnType}/>;
       case "transactions": return <TransactionsTab filtered={filtered} sortBy={sortBy} sortDir={sortDir} toggleSort={toggleSort} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "categories":   return <CategoriesTab catBreakdown={catBreakdown} expenses={expenses} totalExp={totalExp} setFilters={setFilters} setActiveTab={setActiveTab}/>;
       case "trends":       return <TrendsTab filtered={filtered} monthlyTrend={monthlyTrend} catBreakdown={catBreakdown} uniqueCards={uniqueCards} activePeople={activePeople}/>;
