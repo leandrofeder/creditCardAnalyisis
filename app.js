@@ -66,9 +66,7 @@ const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out"
 // normaliza qualquer label de mês para "Mmm/YYYY"
 function normalizeMonthLabel(raw) {
   if (!raw) return raw;
-  // já está no formato correto "Xxx/YYYY"
   if (/^[A-Za-z]{3}\/\d{4}$/.test(raw)) return raw.charAt(0).toUpperCase() + raw.slice(1);
-  // "fev. de 2025" ou "fev 2025" ou "fev. 2025" – legado do toLocaleDateString
   const m = raw.match(/^([a-záéíóúãõç]+)\.?\s+(?:de\s+)?(\d{4})$/i);
   if (m) {
     const ptMap = {jan:"Jan",fev:"Fev",mar:"Mar",abr:"Abr",mai:"Mai",jun:"Jun",
@@ -89,7 +87,6 @@ function categorize(title) {
   if(t.includes("apple")||t.includes("microsoft")||t.includes("canva")||t.includes("hostgator")||t.includes("applecombill")||t.includes("netflix")||t.includes("spotify")||t.includes("amazon prime")||t.includes("youtube")||t.includes("chatgpt")||t.includes("openai")||t.includes("dropbox")||t.includes("adobe")||t.includes("icloud")||t.includes("amazonprimebr")) return "Tecnologia/Assinaturas";
   if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")||t.includes("americanas")||t.includes("aliexpress")) return "Compras Online";
   if(t.includes("posto")||t.includes("gasolina")||t.includes("zandona")||t.includes("autopost")||t.includes("combustivel")||t.includes("shell")||t.includes("martini comercio de")||t.includes("ipiranga")) return "Gasolina";
-  // Delivery — antes de Gastronomia para capturar ifood/rappi/delivery primeiro
   if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("loggi")||t.includes("motoboy")||t.includes("ifd")) return "Delivery";
   if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")) return "Gastronomia";
   if(t.includes("padaria")||t.includes("panificadora")||t.includes("girassol")||t.includes("royale")||t.includes("dona norma")||t.includes("papicori")||t.includes("")) return "Padaria/Alimentação";
@@ -109,7 +106,6 @@ function categorize(title) {
 // ─── PARSERS ──────────────────────────────────
 function parseCSV(text, filename, personName) {
   const lines = text.trim().split(/\r?\n/).slice(1);
-  // ── FIX: normaliza label do mês para "Mmm/YYYY" consistente ──
   const m = filename.match(/(\d{4}-\d{2})/);
   const label = m
     ? `${PT_MO_SHORT[parseInt(m[1].slice(5, 7), 10) - 1]}/${m[1].slice(0, 4)}`
@@ -156,7 +152,6 @@ async function parsePDF(file, personName) {
   const isYearOnly=/^\d+$/.test(rawM);
   const fileBase=file.name.replace(/\.[^.]+$/,"").replace(/^\d{4}$/,"arquivo");
   const monthPart=ptMap[rawM]||(!isYearOnly?rawM:null)||fileBase;
-  // ── FIX: garante formato "Mmm/YYYY" ──
   const monthLabel=normalizeMonthLabel(`${monthPart}/${year}`);
   const txns=[];
   const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};
@@ -172,7 +167,7 @@ async function parsePDF(file, personName) {
   return txns;
 }
 
-// Títulos que indicam crédito/pagamento — não são gastos, não devem aparecer
+// Títulos que indicam crédito/pagamento — não são gastos, não devem aparecer em lugar nenhum
 const EXCLUDED_TITLES = [
   "pagamento recebido","pagamento efetuado","crédito em rotativo",
   "credito em rotativo","saldo em rotativo","crédito rotativo",
@@ -181,7 +176,7 @@ const EXCLUDED_TITLES = [
 ];
 
 function isExcludedTransaction(t) {
-  if (t.amount <= 0) return true; // valores negativos = crédito recebido
+  if (t.amount <= 0) return true;
   const tl = t.title.toLowerCase();
   return EXCLUDED_TITLES.some(ex => tl.includes(ex));
 }
@@ -334,7 +329,7 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
   const canJoin = people.length >= 2;
 
   const stats = people.map(p => {
-    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
+    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento"&&!EXCLUDED_TITLES.some(ex=>t.title.toLowerCase().includes(ex)));
     return {...p, total:exp.reduce((s,t)=>s+t.amount,0), count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
   });
 
@@ -558,7 +553,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
     return {label:"PDF/CSV",color:"#64748b"};
   };
 
-  // ── Step 1: Name + Color ──────────────────────
   if(step==="name") return (
     <div className="upload-screen">
       <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
@@ -614,7 +608,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
     </div>
   );
 
-  // ── Step 2: Files ─────────────────────────────
   return (
     <div className="upload-screen">
       <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
@@ -689,7 +682,6 @@ function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
 }
 
 // ─── MULTI-SEARCH INPUT ───────────────────────
-// Componente reutilizável para busca com múltiplas tags
 function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar… (Enter p/ adicionar)", small=false }) {
   const set = (key, val) => setFilters(f => ({...f, [key]: val}));
 
@@ -782,7 +774,6 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
       </nav>
 
       <div className="sidebar-filters">
-        {/* ── MULTI-SEARCH ─── */}
         <div className="filter-section">
           <div className="filter-label">
             BUSCAR
@@ -990,7 +981,6 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
             {hasFilter&&<button className="drawer-clear-btn tap" onClick={clearAll}>Limpar tudo</button>}
           </div>
 
-          {/* ── MULTI-SEARCH ─── */}
           <div className="filter-section">
             <div className="filter-label">BUSCAR</div>
             <MultiSearchInput search={search} searchTags={searchTags} setFilters={setFilters} />
@@ -1078,7 +1068,6 @@ function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount 
   const viewLabel = activePerson?activePerson.name:activePeople.length>1?"Juntos":activePeople[0]?.name||"";
   const hasAnyFilter = !!filters.search || searchTags.length > 0 || activeTags.length > 0;
 
-  // Handle Enter to add search tag in the desktop header input
   const handleSearchKeyDown = e => {
     if (e.key === "Enter" && filters.search.trim()) {
       e.preventDefault();
@@ -1286,9 +1275,9 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
 // ─── TRANSACTIONS TAB ─────────────────────────
 function TransactionsTab({ filtered, sortBy, sortDir, toggleSort, activePeople, onDeleteTransaction, onEditCategory }) {
   const [limit,setLimit]=useState(50);
-  // "expenses" aqui = todos os itens que representam saída de dinheiro no conjunto filtrado
-  const expenses=filtered.filter(t=>Math.abs(t.amount)>0&&t.amount!==0);
-  const total=filtered.reduce((s,t)=>s+Math.abs(t.amount),0);
+  // ── FIX: expenses = gastos reais (sem encargos); total só soma gastos, não tudo
+  const expenses=filtered.filter(t=>t.category!=="Encargos/Juros");
+  const total=expenses.reduce((s,t)=>s+t.amount,0);
   return (
     <div className="anim-fade-up">
       <div className="sort-strip">
@@ -1461,28 +1450,32 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   const cards   = useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
   const years   = useMemo(()=>[...new Set(transactions.map(t=>t.year).filter(Boolean))].sort(),[transactions]);
-  // Filter out year-only month labels (e.g. "2025", "2026") — keep only "Mmm/YYYY"
   const months  = useMemo(()=>{
     const parseM=s=>{const p=s.match(/(\w+)\/(\d{4})/);if(!p)return 0;const mo={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};return parseInt(p[2])*100+(mo[p[1].toLowerCase().slice(0,3)]||0);};
     return [...new Set(transactions.map(t=>t.month))]
-      .filter(m => m && /^[A-Za-z]{3}\/\d{4}$/.test(m))  // só aceita formato normalizado
+      .filter(m => m && /^[A-Za-z]{3}\/\d{4}$/.test(m))
       .sort((a,b)=>parseM(a)-parseM(b));
   },[transactions]);
   const uniqueCards=useMemo(()=>[...new Set(transactions.map(t=>t.card))],[transactions]);
 
   const filtered=useMemo(()=>{
     const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter, txnType, amountMin, amountMax } = filters;
-    // Junta tags confirmadas + texto atual → match em qualquer uma (OR)
     const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];
 
     return transactions.filter(t=>{
+      // ── RE-APLICA EXCLUSÕES EM DADOS JÁ SALVOS NO LOCALSTORAGE ──
+      // Garante que pagamentos/créditos com amount<=0 ou títulos excluídos
+      // (que podem ter sido salvos antes desta versão) não entrem nos cálculos
+      if(t.amount <= 0) return false;
+      if(EXCLUDED_TITLES.some(ex => t.title.toLowerCase().includes(ex))) return false;
+      // Categoria "Pagamento" também é crédito, nunca deve aparecer como gasto
+      if(t.category === "Pagamento") return false;
+
       if(selectedPerson!=="all"&&t.person!==selectedPerson) return false;
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
-      // ── FIX: filtra estritamente pelo campo month (= mês da fatura) ──
       if(selectedMonth!=="all"&&t.month!==selectedMonth) return false;
       if(categoryFilter!=="all"&&t.category!==categoryFilter) return false;
-      // Multi-search: qualquer tag deve estar no título ou categoria
       if(allTerms.length>0 && !allTerms.some(term=>
         t.title.toLowerCase().includes(term.toLowerCase()) ||
         t.category.toLowerCase().includes(term.toLowerCase())
@@ -1503,7 +1496,9 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     if(filters.txnType==="charge") return filtered.filter(t=>t.category==="Encargos/Juros");
     return filtered.filter(t=>t.category!=="Encargos/Juros");
   },[filtered,filters.txnType]);
-  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+Math.abs(t.amount),0),[expenses]);
+
+  // ── FIX: sem Math.abs — filtered já garante amount > 0
+  const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+t.amount,0),[expenses]);
   const totalCharge  = useMemo(()=>filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0),[filtered]);
   const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
   const catStats = useMemo(()=>{
@@ -1562,7 +1557,6 @@ function App() {
   const [activePersonNames, setActivePersonNames] = useState([]);
   const [addFilesPerson,    setAddFilesPerson]    = useState(null);
 
-  // Derive activePeople reactively — auto-updates when people changes
   const activePeople = useMemo(
     () => people.filter(p => activePersonNames.includes(p.name)),
     [people, activePersonNames]
@@ -1600,7 +1594,6 @@ function App() {
     setScreen("home");
   };
 
-  // Delete a single transaction — updates state + localStorage
   const handleDeleteTransaction = useCallback((personName, date, title, amount) => {
     setPeople(prevPeople => {
       const updated = prevPeople.map(p => {
@@ -1622,7 +1615,6 @@ function App() {
     });
   }, []);
 
-  // Edit category of a transaction — updates state + localStorage
   const handleEditCategory = useCallback((personName, date, title, amount, newCategory) => {
     setPeople(prevPeople => {
       const updated = prevPeople.map(p => {
