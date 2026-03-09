@@ -44,7 +44,8 @@ const { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
 const fmt      = v => `R$ ${Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 const fmtShort = v => { const n=Math.abs(v); return n>=1000?`R$${(n/1000).toFixed(1)}k`:`R$${n.toFixed(0)}`; };
 const fmtDate  = d => { if(!d) return ""; const p=d.split("-"); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
-const fmtTs    = ts => ts ? new Date(ts).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+const fmtTs    = ts => ts ?
+  new Date(ts).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
 
 // ─── CONSTANTS ────────────────────────────────
 const CAT_COLORS = {
@@ -60,7 +61,6 @@ const CAT_COLORS = {
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
 
-// ─── CATEGORY GROUPS (for quick-select presets) ──
 const CAT_GROUPS = [
   { label:"🍽️ Alimentação", cats:["Supermercado","Gastronomia","Delivery","Padaria/Alimentação","Cafés/Pequenos","Conveniência"] },
   { label:"🚗 Transporte",   cats:["Transporte","Gasolina","Estacionamento"] },
@@ -68,7 +68,6 @@ const CAT_GROUPS = [
   { label:"💻 Digital",      cats:["Tecnologia/Assinaturas","Compras Online"] },
 ];
 
-// ─── PT MONTHS HELPER ─────────────────────────
 const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 function normalizeMonthLabel(raw) {
@@ -92,13 +91,13 @@ function categorize(title) {
   if(t.includes("farmacia")||t.includes("saude")||t.includes("otica")||t.includes("medic")||t.includes("drogasil")) return "Saúde";
   if(t.includes("academia")||t.includes("smartfit")||t.includes("bluefit")) return "Academia/Saúde";
   if(t.includes("apple")||t.includes("microsoft")||t.includes("canva")||t.includes("hostgator")||t.includes("applecombill")||t.includes("netflix")||t.includes("spotify")||t.includes("amazon prime")||t.includes("youtube")||t.includes("chatgpt")||t.includes("openai")||t.includes("dropbox")||t.includes("adobe")||t.includes("icloud")||t.includes("amazonprimebr")) return "Tecnologia/Assinaturas";
-  if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")||t.includes("americanas")||t.includes("aliexpress")) return "Compras Online";
-  if(t.includes("posto")||t.includes("gasolina")||t.includes("zandona")||t.includes("autopost")||t.includes("combustivel")||t.includes("shell")||t.includes("martini comercio de")||t.includes("ipiranga")) return "Gasolina";
-  if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("loggi")||t.includes("motoboy")||t.includes("ifd")) return "Delivery";
-  if(t.includes("restaurant")||t.includes("takumi")||t.includes("toscana")||t.includes("boli")||t.includes("ohana")||t.includes("acai")||t.includes("sushi")||t.includes("brunch")||t.includes("bier")||t.includes("ecke")||t.includes("fogao")||t.includes("pasteis")||t.includes("napoli")||t.includes("kalzone")||t.includes("divino")||t.includes("sitio")||t.includes("allesblau")||t.includes("frogpay")||t.includes("polaco")||t.includes("dinho")||t.includes("burger")||t.includes("lanchonete")||t.includes("churrascar")||t.includes("pizz")||t.includes("grill")||t.includes("bistro")) return "Gastronomia";
-  if(t.includes("padaria")||t.includes("panificadora")||t.includes("girassol")||t.includes("royale")||t.includes("dona norma")||t.includes("papicori")||t.includes("")) return "Padaria/Alimentação";
-  if(t.includes("cafe vending")||t.includes("aromapress")||t.includes("raiden")||t.includes("cappta")||t.includes("starbucks")||t.includes("cafe")) return "Cafés/Pequenos";
-  if(t.includes("54656637adan")||t.includes("baitah")||t.includes("convenienc")||t.includes("conveni")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
+  if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")) return "Compras Online";
+  if(t.includes("posto")||t.includes("combustivel")||t.includes("gasolina")||t.includes("shell")||t.includes("ipiranga")||t.includes("petrob")) return "Gasolina";
+  if(t.includes("restaurante")||t.includes("lanchonete")||t.includes("pizz")||t.includes("burger")||t.includes("sushi")||t.includes("churrascaria")||t.includes("bar ")||t.includes("grill")) return "Gastronomia";
+  if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("uber eats")) return "Delivery";
+  if(t.includes("padaria")||t.includes("confeitaria")||t.includes("pao ")||t.includes("bakery")) return "Padaria/Alimentação";
+  if(t.includes("cafe")||t.includes("café")||t.includes("coffee")||t.includes("starbucks")) return "Cafés/Pequenos";
+  if(t.includes("conveniencia")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
   if(t.includes("pagamento recebido")||t.includes("pagamento efetuado")) return "Pagamento";
   if(t.includes("parcela")||t.includes("siapi")||t.includes("panasonic")||t.includes("prata fina")||t.includes("isabela")||t.includes("s v comercio")) return "Parcelamentos";
   if(t.includes("juros")||t.includes("multa")||t.includes("iof")||t.includes("saldo em")||t.includes("rotativo")||t.includes("mora")) return "Encargos/Juros";
@@ -411,282 +410,6 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
   );
 }
 
-// ═══════════════════════════════════════════════
-//  ADD FILES SCREEN
-// ═══════════════════════════════════════════════
-function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
-  const [files,    setFiles]    = useState([]);
-  const [loading,  setLoading]  = useState(false);
-  const [progress, setProgress] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef();
-
-  const addFiles = raw => {
-    const valid=Array.from(raw).filter(f=>f.name.endsWith(".csv")||f.name.endsWith(".pdf"));
-    setFiles(prev=>{const names=new Set(prev.map(f=>f.name));return [...prev,...valid.filter(f=>!names.has(f.name))];});
-  };
-  const handleDrop = e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
-
-  const handleProcess = async () => {
-    if(!files.length) return;
-    setLoading(true);
-    const all=[];
-    for(const file of files){setProgress(`Lendo ${file.name}…`);try{all.push(...(await processFile(file,person.name)));}catch(e){console.error(e);}}
-    setLoading(false); setProgress("");
-    if(!all.length){alert("Nenhuma transação encontrada nos novos arquivos.");return;}
-    onMerge(person.name, all, files.map(f=>f.name));
-  };
-
-  const guessCard = n => {
-    const l=n.toLowerCase();
-    if(l.includes("nubank")) return {label:"Nubank",color:"#8c52ff"};
-    if(l.includes("inter"))  return {label:"Inter", color:"#ff6b00"};
-    if(l.includes("fatura_")||l.includes("ailos")) return {label:"Ailos",color:"#00a86b"};
-    return {label:"PDF/CSV",color:"#64748b"};
-  };
-
-  return (
-    <div className="upload-screen">
-      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
-        <button className="dh-icon-btn tap" onClick={onBack}>←</button>
-        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
-      </div>
-
-      <div className="upload-inner anim-fade-up">
-        <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${person.color}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
-          <PersonAvatar name={person.name} color={person.color} size={40} fontSize={15}/>
-          <div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:person.color}}>{person.name}</div>
-            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{person.transactions.length} transações carregadas</div>
-          </div>
-        </div>
-
-        {person.fileNames&&person.fileNames.length>0&&(
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>ARQUIVOS JÁ CARREGADOS</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {person.fileNames.map((fn,i)=>{
-                const card=guessCard(fn);
-                return (
-                  <span key={i} style={{fontSize:9,padding:"3px 8px",borderRadius:6,background:card.color+"15",color:card.color,border:`1px solid ${card.color}30`,fontFamily:"'DM Mono',monospace"}}>{fn}</span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="upload-header" style={{marginBottom:20}}>
-          <span className="upload-emoji">📁</span>
-          <div className="upload-title">Adicionar arquivos</div>
-          <div className="upload-sub">Selecione novos arquivos para {person.name}</div>
-        </div>
-
-        <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
-        <div className={`upload-drop-zone tap${dragOver?" drag-over":""}`}
-          onClick={()=>inputRef.current?.click()}
-          onDragOver={e=>{e.preventDefault();setDragOver(true);}}
-          onDragLeave={()=>setDragOver(false)}
-          onDrop={handleDrop}>
-          <span className="upload-drop-icon">{dragOver?"📂":"📁"}</span>
-          <span className="upload-drop-text">Selecionar ou soltar arquivos</span>
-          <span className="upload-drop-hint">.CSV (Nubank) · .PDF (Ailos / Inter)</span>
-        </div>
-
-        {files.length>0&&(
-          <div className="upload-file-list">
-            <div className="ufl-header">{files.length} NOVO{files.length>1?"S":""} ARQUIVO{files.length>1?"S":""}</div>
-            {files.map((f,i)=>{
-              const card=guessCard(f.name);
-              return (
-                <div key={i} className="ufl-item">
-                  <span className="ufl-icon">{f.name.endsWith(".pdf")?"📄":"📊"}</span>
-                  <div className="ufl-meta"><div className="ufl-name">{f.name}</div><div className="ufl-size">{(f.size/1024).toFixed(0)} KB</div></div>
-                  <span className="ufl-tag" style={{background:card.color+"20",color:card.color,borderColor:card.color+"50"}}>{card.label}</span>
-                  <button className="ufl-del tap" onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}>✕</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <button className={`upload-cta tap-btn${files.length>0&&!loading?" ready":" disabled"}`} onClick={handleProcess} disabled={files.length===0||loading}>
-          {loading?(<><span className="spinner"/><span className="anim-pulse">{progress||"Processando…"}</span></>):
-            files.length===0?"Selecione ao menos um arquivo":`Adicionar ${files.length} arquivo${files.length>1?"s":""} a ${person.name} →`}
-        </button>
-        <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════
-//  UPLOAD SCREEN
-// ═══════════════════════════════════════════════
-function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
-  const [step,        setStep]        = useState("name");
-  const [personName,  setPersonName]  = useState("");
-  const [personColor, setPersonColor] = useState(()=>nextPersonColor(existingPeople||[]));
-  const [files,       setFiles]       = useState([]);
-  const [loading,     setLoading]     = useState(false);
-  const [progress,    setProgress]    = useState("");
-  const [dragOver,    setDragOver]    = useState(false);
-  const inputRef   = useRef();
-  const nameRef    = useRef();
-
-  useEffect(()=>{ if(step==="name") nameRef.current?.focus(); },[step]);
-
-  const addFiles = raw => {
-    const valid=Array.from(raw).filter(f=>f.name.endsWith(".csv")||f.name.endsWith(".pdf"));
-    setFiles(prev=>{const names=new Set(prev.map(f=>f.name));return [...prev,...valid.filter(f=>!names.has(f.name))];});
-  };
-  const handleDrop = e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
-
-  const handleProcess = async () => {
-    if(!files.length) return;
-    setLoading(true);
-    const all=[];
-    for(const file of files){setProgress(`Lendo ${file.name}…`);try{all.push(...(await processFile(file,personName)));}catch(e){console.error(e);}}
-    setLoading(false); setProgress("");
-    if(!all.length){alert("Nenhuma transação encontrada.");return;}
-    onLoad({name:personName,color:personColor,transactions:all,fileNames:files.map(f=>f.name),savedAt:Date.now()});
-  };
-
-  const guessCard = n => {
-    const l=n.toLowerCase();
-    if(l.includes("nubank")) return {label:"Nubank",color:"#8c52ff"};
-    if(l.includes("inter"))  return {label:"Inter", color:"#ff6b00"};
-    if(l.includes("fatura_")||l.includes("ailos")) return {label:"Ailos",color:"#00a86b"};
-    return {label:"PDF/CSV",color:"#64748b"};
-  };
-
-  if(step==="name") return (
-    <div className="upload-screen">
-      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
-        {onBack?<button className="dh-icon-btn tap" onClick={onBack}>←</button>:<span/>}
-        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
-      </div>
-
-      <div className="upload-inner anim-fade-up">
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
-          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--accent)",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>1</div>
-          <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
-          <div style={{flex:1,height:1,background:"var(--border-med)"}}/>
-          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--bg-input)",color:"var(--text-faint)",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>2</div>
-          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".06em"}}>ARQUIVOS</div>
-        </div>
-
-        <div className="upload-header" style={{marginBottom:28}}>
-          <span className="upload-emoji">👤</span>
-          <div className="upload-title">Quem é você?</div>
-          <div className="upload-sub">Identifique o dono dos arquivos</div>
-        </div>
-
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>NOME</div>
-          <input ref={nameRef}
-            className="search-input"
-            style={{width:"100%",padding:"14px 16px",fontSize:14,borderRadius:12}}
-            placeholder="Ex: Ana, João, Casal…"
-            value={personName}
-            onChange={e=>setPersonName(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&personName.trim())setStep("files");}}
-          />
-        </div>
-
-        <div style={{marginBottom:28}}>
-          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:10}}>COR DO PERFIL</div>
-          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-            {PERSON_COLORS.map(c=>(
-              <button key={c} className="tap" onClick={()=>setPersonColor(c)}
-                style={{width:32,height:32,borderRadius:"50%",background:c,border:`3px solid ${personColor===c?"var(--text-primary)":"transparent"}`,cursor:"pointer",transition:"transform .15s",flexShrink:0}}
-                onMouseOver={e=>e.currentTarget.style.transform="scale(1.2)"}
-                onMouseOut={e=>e.currentTarget.style.transform="scale(1)"}/>
-            ))}
-            {personName.trim()&&<PersonAvatar name={personName} color={personColor} size={42} fontSize={15}/>}
-          </div>
-        </div>
-
-        <button className={`upload-cta tap-btn${personName.trim()?" ready":" disabled"}`}
-          onClick={()=>{if(personName.trim())setStep("files");}} disabled={!personName.trim()}>
-          Continuar → Selecionar arquivos
-        </button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="upload-screen">
-      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
-        <button className="dh-icon-btn tap" onClick={()=>setStep("name")}>←</button>
-        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
-      </div>
-
-      <div className="upload-inner anim-fade-up">
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
-          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--bg-input)",color:"var(--text-faint)",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>1</div>
-          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
-          <div style={{flex:1,height:1,background:"var(--border-med)"}}/>
-          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--accent)",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>2</div>
-          <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>ARQUIVOS</div>
-        </div>
-
-        <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${personColor}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
-          <PersonAvatar name={personName} color={personColor} size={40} fontSize={15}/>
-          <div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:personColor}}>{personName}</div>
-            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>Selecione os arquivos desta pessoa</div>
-          </div>
-          <button className="tap" onClick={()=>setStep("name")} style={{marginLeft:"auto",fontSize:11,color:"var(--text-dim)",background:"none",border:"none",cursor:"pointer"}}>✏️ editar</button>
-        </div>
-
-        <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
-        <div className={`upload-drop-zone tap${dragOver?" drag-over":""}`}
-          onClick={()=>inputRef.current?.click()}
-          onDragOver={e=>{e.preventDefault();setDragOver(true);}}
-          onDragLeave={()=>setDragOver(false)}
-          onDrop={handleDrop}>
-          <span className="upload-drop-icon">{dragOver?"📂":"📁"}</span>
-          <span className="upload-drop-text">Selecionar ou soltar arquivos</span>
-          <span className="upload-drop-hint">.CSV (Nubank) · .PDF (Ailos / Inter)</span>
-        </div>
-
-        {files.length>0&&(
-          <div className="upload-file-list">
-            <div className="ufl-header">{files.length} ARQUIVO{files.length>1?"S":""}</div>
-            {files.map((f,i)=>{
-              const card=guessCard(f.name);
-              return (
-                <div key={i} className="ufl-item">
-                  <span className="ufl-icon">{f.name.endsWith(".pdf")?"📄":"📊"}</span>
-                  <div className="ufl-meta"><div className="ufl-name">{f.name}</div><div className="ufl-size">{(f.size/1024).toFixed(0)} KB</div></div>
-                  <span className="ufl-tag" style={{background:card.color+"20",color:card.color,borderColor:card.color+"50"}}>{card.label}</span>
-                  <button className="ufl-del tap" onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}>✕</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="upload-cards-guide">
-          {[{icon:"🟣",label:"Nubank",desc:"CSV pelo app",color:"#8c52ff"},{icon:"🟢",label:"Ailos",desc:"Fatura PDF",color:"#00a86b"},{icon:"🟠",label:"Inter",desc:"Fatura PDF",color:"#ff6b00"}].map(b=>(
-            <div key={b.label} className="ucg-item" style={{borderColor:b.color+"30"}}>
-              <div className="ucg-icon">{b.icon}</div>
-              <div className="ucg-name" style={{color:b.color}}>{b.label}</div>
-              <div className="ucg-desc">{b.desc}</div>
-            </div>
-          ))}
-        </div>
-
-        <button className={`upload-cta tap-btn${files.length>0&&!loading?" ready":" disabled"}`} onClick={handleProcess} disabled={files.length===0||loading}>
-          {loading?(<><span className="spinner"/><span className="anim-pulse">{progress||"Processando…"}</span></>):
-            files.length===0?"Selecione ao menos um arquivo":`Analisar ${files.length} arquivo${files.length>1?"s":""} →`}
-        </button>
-        <div className="upload-privacy">🔒 100% local · seus dados não saem do dispositivo</div>
-      </div>
-    </div>
-  );
-}
-
 // ─── MULTI-SEARCH INPUT ───────────────────────
 function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar… (Enter p/ adicionar)", small=false }) {
   const set = (key, val) => setFilters(f => ({...f, [key]: val}));
@@ -729,7 +452,8 @@ function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar�
         <input
           className="search-input"
           type="text"
-          placeholder={searchTags && searchTags.length > 0 ? "+ outra busca (Enter)" : placeholder}
+          placeholder={searchTags && searchTags.length > 0 ?
+            `+ busca (Enter) · ${searchTags.length} tag${searchTags.length>1?"s":""}` : placeholder}
           value={search}
           onChange={e => set("search", e.target.value)}
           onKeyDown={handleKeyDown}
@@ -746,10 +470,9 @@ function MultiSearchInput({ search, searchTags, setFilters, placeholder="Buscar�
 }
 
 // ─── CATEGORY FILTER SECTION (shared) ────────
-// Used in both FilterSidebar and FilterDrawer
 function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=false }) {
   const cats = categoryFilter || [];
-  
+
   const toggleCat = name => {
     setFilters(f => {
       const current = f.categoryFilter || [];
@@ -763,7 +486,6 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
   const applyGroup = groupCats => {
     setFilters(f => {
       const current = f.categoryFilter || [];
-      // If all group cats already selected, deselect them; otherwise select all
       const allSelected = groupCats.every(c => current.includes(c));
       if (allSelected) {
         return {...f, categoryFilter: current.filter(c => !groupCats.includes(c))};
@@ -776,14 +498,12 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
 
   const clearAll = () => setFilters(f => ({...f, categoryFilter: []}));
 
-  // Combined total for selected cats
   const selectedTotal = cats.length > 0 && catStats
     ? cats.reduce((s, c) => s + (catStats.map[c] || 0), 0)
     : 0;
 
   return (
     <div>
-      {/* Quick-select group presets */}
       <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
         {CAT_GROUPS.map(g => {
           const allSel = g.cats.every(c => cats.includes(c));
@@ -808,7 +528,6 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
         })}
       </div>
 
-      {/* Combined total banner */}
       {cats.length > 1 && catStats && selectedTotal > 0 && (
         <div style={{
           marginBottom:10,padding:"7px 10px",borderRadius:8,
@@ -820,13 +539,8 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
         </div>
       )}
 
-      {/* "Todas" chip + individual chips */}
       <div className="chips-row">
-        <button
-          className={`chip tap${cats.length===0?" active":""}`}
-          onClick={clearAll}>
-          Todas
-        </button>
+        <button className={`chip tap${cats.length===0?" active":""}`} onClick={clearAll}>Todas</button>
         {Object.entries(CAT_COLORS).map(([name, color]) => {
           const val = catStats?.map?.[name] || 0;
           const pct = catStats?.total > 0 ? ((val/catStats.total)*100).toFixed(0) : 0;
@@ -844,11 +558,7 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
               <span className="dot" style={{background:color}}/>
               <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
               {!isEmpty && (
-                <span style={{
-                  fontSize:9,flexShrink:0,marginLeft:4,
-                  color: isActive ? "inherit" : color,
-                  opacity:.85,fontWeight:500,
-                }}>{pct}%</span>
+                <span style={{fontSize:9,flexShrink:0,marginLeft:4,color:isActive?"inherit":color,opacity:.85,fontWeight:500}}>{pct}%</span>
               )}
             </button>
           );
@@ -862,7 +572,7 @@ function CategoryFilterSection({ categoryFilter, setFilters, catStats, compact=f
 function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeople, cards, years, months, totalCount, catStats, dark, toggleTheme, onReset }) {
   const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter.length>0 || txnType!=="all" || !!amountMin || !!amountMax;
+  const hasFilter = !(!search && searchTags.length===0 && selectedPerson==="all" && selectedCard==="all" && selectedYear==="all" && selectedMonth==="all" && categoryFilter.length===0 && txnType==="all" && !amountMin && !amountMax);
   const filterCount = [
     search, searchTags.length > 0,
     selectedPerson!=="all", selectedCard!=="all", selectedYear!=="all",
@@ -1025,15 +735,13 @@ function MobileHeader({ filters, setFilters, activePeople, txnCount, dark, toggl
     categoryFilter.length>0, filters.txnType!=="all",
     !!filters.amountMin, !!filters.amountMax,
   ].filter(Boolean).length;
-  const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
 
   return (
     <div className="mobile-header">
       <div className="mh-top">
-        <div style={{flex:1,minWidth:0}}>
-          <div className="mh-title" style={{display:"flex",alignItems:"center",gap:6}}>
-            {activePerson?<PersonAvatar name={activePerson.name} color={activePerson.color} size={22} fontSize={8}/>:"💳"}
-            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePerson?.name||activePeople.length>1?"Dashboard":activePeople[0]?.name||"Dashboard"}</span>
+        <div className="mh-title-wrap">
+          <div className="mh-title">
+            {activePeople.length>1?"Dashboard":activePeople[0]?.name||"Dashboard"}
           </div>
           <div className="mh-sub">{txnCount} transações</div>
         </div>
@@ -1082,7 +790,7 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
   if(!open) return null;
   const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
   const set = (key,val) => setFilters(f=>({...f,[key]:val}));
-  const hasFilter = !!search || searchTags.length > 0 || selectedPerson!=="all" || selectedCard!=="all" || selectedYear!=="all" || selectedMonth!=="all" || categoryFilter.length>0 || txnType!=="all" || !!amountMin || !!amountMax;
+  const hasFilter = !(!search && searchTags.length===0 && selectedPerson==="all" && selectedCard==="all" && selectedYear==="all" && selectedMonth==="all" && categoryFilter.length===0 && txnType==="all" && !amountMin && !amountMax);
   const clearAll = () => setFilters(f=>({...f, search:"", searchTags:[], selectedPerson:"all", selectedCard:"all", selectedYear:"all", selectedMonth:"all", categoryFilter:[], txnType:"all", amountMin:"", amountMax:""}));
   const filteredMonths = selectedYear==="all"?["all",...months.filter(m=>m!=="all")]:["all",...months.filter(m=>m!=="all"&&m.endsWith(selectedYear))];
   return (
@@ -1186,42 +894,50 @@ function DesktopHeader({ activeTab, filters, setFilters, activePeople, txnCount 
   ].filter(Boolean);
   const activePerson = activePeople.find(p=>p.name===filters.selectedPerson);
   const viewLabel = activePerson?activePerson.name:activePeople.length>1?"Juntos":activePeople[0]?.name||"";
-  const hasAnyFilter = !!filters.search || searchTags.length > 0 || activeTags.length > 0 || categoryFilter.length > 0;
+  const hasAnyFilter = !(!filters.search && searchTags.length===0 && filters.selectedPerson==="all" && filters.selectedCard==="all" && filters.selectedYear==="all" && filters.selectedMonth==="all" && categoryFilter.length===0 && filters.txnType==="all" && !filters.amountMin && !filters.amountMax);
 
   const handleSearchKeyDown = e => {
     if (e.key === "Enter" && filters.search.trim()) {
       e.preventDefault();
-      setFilters(f => ({...f, searchTags:[...(f.searchTags||[]), f.search.trim()], search:""}));
+      setFilters(f => ({...f, searchTags: [...(f.searchTags||[]), filters.search.trim()], search: ""}));
     }
     if (e.key === "Backspace" && !filters.search && searchTags.length > 0) {
-      setFilters(f => ({...f, searchTags: f.searchTags.slice(0,-1)}));
+      setFilters(f => ({...f, searchTags: f.searchTags.slice(0, -1)}));
     }
   };
 
   return (
     <>
       <div className="desktop-header">
-        <div className="dh-title">{tabTitles[activeTab]||activeTab}</div>
-        {viewLabel&&<>
-          <span className="dh-sep">·</span>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            {activePerson&&<PersonAvatar name={activePerson.name} color={activePerson.color} size={20} fontSize={8}/>}
-            {!activePerson&&activePeople.length>1&&<span>💑</span>}
-            <span className="dh-subtitle" style={{color:activePerson?.color||"var(--text-faint)"}}>{viewLabel}</span>
-          </div>
-        </>}
-        <span className="dh-sep">·</span><div className="dh-subtitle">{txnCount} transações</div>
+        <div className="dh-left">
+          <div className="dh-title">{tabTitles[activeTab]||"Dashboard"}</div>
+          <div className="dh-sub">{viewLabel} · {txnCount} transações</div>
+        </div>
         <div className="dh-search-wrap">
-          <span className="dh-search-icon">🔍</span>
-          <input
-            className="dh-search"
-            type="text"
-            placeholder={searchTags.length > 0 ? `+ busca (Enter) · ${searchTags.length} tag${searchTags.length>1?"s":""}` : "Buscar… Enter p/ adicionar tag"}
-            value={filters.search}
-            onChange={e=>set("search",e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-          />
-          {filters.search&&<button className="dh-search-clear" onClick={()=>set("search","")}>✕</button>}
+          {searchTags.length > 0 && (
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:5}}>
+              {searchTags.map((tag,i)=>(
+                <span key={i}
+                  onClick={()=>setFilters(f=>({...f,searchTags:f.searchTags.filter((_,j)=>j!==i)}))}
+                  style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 7px",borderRadius:6,cursor:"pointer",background:"var(--accent-glow)",border:"1px solid var(--accent-border)",color:"var(--accent-text)",fontSize:10,fontFamily:"'DM Mono',monospace"}}>
+                  {tag} <span style={{opacity:.7}}>✕</span>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="search-wrap">
+            <span className="search-icon">🔍</span>
+            <input
+              className="search-input dh-search-input"
+              type="text"
+              placeholder={searchTags.length > 0 ?
+                `+ busca (Enter) · ${searchTags.length} tag${searchTags.length>1?"s":""}` : "Buscar… Enter p/ adicionar tag"}
+              value={filters.search}
+              onChange={e=>set("search",e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+            />
+            {filters.search&&<button className="dh-search-clear" onClick={()=>set("search","")}>✕</button>}
+          </div>
         </div>
       </div>
       {hasAnyFilter&&(
@@ -1594,7 +1310,6 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
       if(selectedMonth!=="all"&&t.month!==selectedMonth) return false;
-      // Multi-category filter: show transaction if its category is in the selected list
       if(categoryFilter.length>0&&!categoryFilter.includes(t.category)) return false;
       if(allTerms.length>0 && !allTerms.some(term=>
         t.title.toLowerCase().includes(term.toLowerCase()) ||
@@ -1626,9 +1341,14 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     base.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});
     return {map,total};
   },[filtered]);
+
+  // ── FIX 1: monthlyTrend agora respeita txnType==="charge" ──
   const monthlyTrend = useMemo(()=>{
     const map={};
-    filtered.filter(t=>t.category!=="Encargos/Juros").forEach(t=>{
+    const base = filters.txnType==="charge"
+      ? filtered
+      : filtered.filter(t=>t.category!=="Encargos/Juros");
+    base.forEach(t=>{
       if(!map[t.month]) map[t.month]={month:t.month,total:0};
       map[t.month].total+=t.amount;
       map[t.month][t.card]=(map[t.month][t.card]||0)+t.amount;
@@ -1636,9 +1356,18 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
     });
     const parseM=s=>{const p=s.match(/(\w+)\/(\d{4})/);if(!p)return 0;const mo={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};return parseInt(p[2])*100+(mo[p[1].toLowerCase().slice(0,3)]||0);};
     return Object.values(map).map(m=>({...m,total:+m.total.toFixed(2)})).sort((a,b)=>parseM(a.month)-parseM(b.month));
-  },[filtered]);
+  },[filtered,filters.txnType]);
+
   const topMerchants=useMemo(()=>{const map={};expenses.forEach(t=>{const key=t.title.replace(/ - Parcela \d+\/\d+/g,"").trim();if(!map[key])map[key]={name:key,total:0,count:0};map[key].total+=t.amount;map[key].count++;});return Object.values(map).sort((a,b)=>b.total-a.total).slice(0,10).map(m=>({...m,total:+m.total.toFixed(2)}));},[expenses]);
-  const cardStats=useMemo(()=>uniqueCards.map(card=>{const txns=filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros");return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};}),[filtered,uniqueCards]);
+
+  // ── FIX 2: cardStats agora respeita txnType==="charge" ──
+  const cardStats=useMemo(()=>uniqueCards.map(card=>{
+    const txns = filters.txnType==="charge"
+      ? filtered.filter(t=>t.card===card)
+      : filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros");
+    return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};
+  }),[filtered,uniqueCards,filters.txnType]);
+
   const toggleSort=field=>{if(sortBy===field)setSortDir(d=>d==="desc"?"asc":"desc");else{setSortBy(field);setSortDir("desc");}};
 
   const tabContent=()=>{
@@ -1661,6 +1390,282 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       </div>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab}/>
       <FilterDrawer open={filterOpen} onClose={()=>setFilterOpen(false)} filters={filters} setFilters={setFilters} activePeople={activePeople} cards={cards} years={years} months={months} catStats={catStats}/>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+//  UPLOAD SCREEN
+// ═══════════════════════════════════════════════
+function UploadScreen({ existingPeople, onLoad, onBack, dark, toggleTheme }) {
+  const [step,        setStep]        = useState("name");
+  const [personName,  setPersonName]  = useState("");
+  const [personColor, setPersonColor] = useState(()=>nextPersonColor(existingPeople||[]));
+  const [files,       setFiles]       = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [progress,    setProgress]    = useState("");
+  const [dragOver,    setDragOver]    = useState(false);
+  const inputRef   = useRef();
+  const nameRef    = useRef();
+
+  useEffect(()=>{ if(step==="name") nameRef.current?.focus(); },[step]);
+
+  const addFiles = raw => {
+    const valid=Array.from(raw).filter(f=>f.name.endsWith(".csv")||f.name.endsWith(".pdf"));
+    setFiles(prev=>{const names=new Set(prev.map(f=>f.name));return [...prev,...valid.filter(f=>!names.has(f.name))];});
+  };
+  const handleDrop = e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
+
+  const handleProcess = async () => {
+    if(!files.length) return;
+    setLoading(true);
+    const all=[];
+    for(const file of files){setProgress(`Lendo ${file.name}…`);try{all.push(...(await processFile(file,personName)));}catch(e){console.error(e);}}
+    setLoading(false); setProgress("");
+    if(!all.length){alert("Nenhuma transação encontrada. Verifique o formato dos arquivos.");return;}
+    onLoad({name:personName,color:personColor,transactions:all,fileNames:files.map(f=>f.name),savedAt:Date.now()});
+  };
+
+  const guessCard = n => {
+    const l=n.toLowerCase();
+    if(l.includes("nubank")) return {label:"Nubank",color:"#8c52ff"};
+    if(l.includes("inter"))  return {label:"Inter", color:"#ff6b00"};
+    if(l.includes("fatura_")||l.includes("ailos")) return {label:"Ailos",color:"#00a86b"};
+    return {label:"PDF/CSV",color:"#64748b"};
+  };
+
+  if(step==="name") return (
+    <div className="upload-screen">
+      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
+        {onBack?<button className="dh-icon-btn tap" onClick={onBack}>←</button>:<span/>}
+        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
+      </div>
+
+      <div className="upload-inner anim-fade-up">
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
+          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--accent)",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>1</div>
+          <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
+          <div style={{flex:1,height:1,background:"var(--border-med)"}}/>
+          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--bg-input)",color:"var(--text-faint)",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>2</div>
+          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".06em"}}>ARQUIVOS</div>
+        </div>
+
+        <div className="upload-header" style={{marginBottom:28}}>
+          <span className="upload-emoji">👤</span>
+          <div className="upload-title">Quem é você?</div>
+          <div className="upload-sub">Identifique o dono dos arquivos</div>
+        </div>
+
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>NOME</div>
+          <input ref={nameRef}
+            className="search-input"
+            style={{width:"100%",padding:"14px 16px",fontSize:14,borderRadius:12}}
+            placeholder="Ex: Ana, João, Casal…"
+            value={personName}
+            onChange={e=>setPersonName(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"&&personName.trim())setStep("files");}}
+          />
+        </div>
+
+        <div style={{marginBottom:28}}>
+          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:10}}>COR DO PERFIL</div>
+          <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+            {PERSON_COLORS.map(c=>(
+              <button key={c} className="tap" onClick={()=>setPersonColor(c)}
+                style={{width:32,height:32,borderRadius:"50%",background:c,border:`3px solid ${personColor===c?"var(--text-primary)":"transparent"}`,cursor:"pointer",transition:"transform .15s",flexShrink:0}}
+                onMouseOver={e=>e.currentTarget.style.transform="scale(1.2)"}
+                onMouseOut={e=>e.currentTarget.style.transform="scale(1)"}/>
+            ))}
+            {personName.trim()&&<PersonAvatar name={personName} color={personColor} size={42} fontSize={15}/>}
+          </div>
+        </div>
+
+        <button className={`upload-cta tap-btn${personName.trim()?" ready":" disabled"}`}
+          onClick={()=>{if(personName.trim())setStep("files");}} disabled={!personName.trim()}>
+          Continuar → Selecionar arquivos
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="upload-screen">
+      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
+        <button className="dh-icon-btn tap" onClick={()=>setStep("name")}>←</button>
+        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
+      </div>
+
+      <div className="upload-inner anim-fade-up">
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
+          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--bg-input)",color:"var(--text-faint)",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>1</div>
+          <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".06em"}}>IDENTIFICAÇÃO</div>
+          <div style={{flex:1,height:1,background:"var(--border-med)"}}/>
+          <div style={{width:24,height:24,borderRadius:"50%",background:"var(--accent)",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>2</div>
+          <div style={{fontSize:10,color:"var(--accent-text)",letterSpacing:".06em"}}>ARQUIVOS</div>
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${personColor}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
+          <PersonAvatar name={personName} color={personColor} size={40} fontSize={15}/>
+          <div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:personColor}}>{personName}</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>Selecione os arquivos desta pessoa</div>
+          </div>
+          <button className="tap" onClick={()=>setStep("name")} style={{marginLeft:"auto",fontSize:11,color:"var(--text-dim)",background:"none",border:"none",cursor:"pointer"}}>✏️ editar</button>
+        </div>
+
+        <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
+        <div className={`upload-drop-zone tap${dragOver?" drag-over":""}`}
+          onClick={()=>inputRef.current?.click()}
+          onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+          onDragLeave={()=>setDragOver(false)}
+          onDrop={handleDrop}>
+          <span className="upload-drop-icon">{dragOver?"📂":"📁"}</span>
+          <span className="upload-drop-text">Selecionar ou soltar arquivos</span>
+          <span className="upload-drop-hint">.CSV (Nubank) · .PDF (Ailos / Inter)</span>
+        </div>
+
+        {files.length>0&&(
+          <div className="upload-file-list">
+            <div className="ufl-header">{files.length} ARQUIVO{files.length>1?"S":""}</div>
+            {files.map((f,i)=>{
+              const card=guessCard(f.name);
+              return (
+                <div key={i} className="ufl-item">
+                  <span className="ufl-icon">{f.name.endsWith(".pdf")?"📄":"📊"}</span>
+                  <div className="ufl-meta"><div className="ufl-name">{f.name}</div><div className="ufl-size">{(f.size/1024).toFixed(0)} KB</div></div>
+                  <span className="ufl-tag" style={{background:card.color+"20",color:card.color,borderColor:card.color+"50"}}>{card.label}</span>
+                  <button className="ufl-del tap" onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="upload-cards-guide">
+          {[{icon:"🟣",label:"Nubank",desc:"CSV pelo app",color:"#8c52ff"},{icon:"🟢",label:"Ailos",desc:"Fatura PDF",color:"#00a86b"},{icon:"🟠",label:"Inter",desc:"Fatura PDF",color:"#ff6b00"}].map(b=>(
+            <div key={b.label} className="ucg-item" style={{borderColor:b.color+"30"}}>
+              <div className="ucg-icon">{b.icon}</div>
+              <div className="ucg-name" style={{color:b.color}}>{b.label}</div>
+              <div className="ucg-desc">{b.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        <button className={`upload-cta tap-btn${files.length>0&&!loading?" ready":" disabled"}`} onClick={handleProcess} disabled={files.length===0||loading}>
+          {loading?(<><span className="spinner"/><span className="anim-pulse">{progress||"Processando…"}</span></>):
+            files.length===0?"Selecione ao menos um arquivo":`Analisar ${files.length} arquivo${files.length>1?"s":""} →`}
+        </button>
+        <div className="upload-privacy">🔒 100% local · seus dados não saem do dispositivo</div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+//  ADD FILES SCREEN
+// ═══════════════════════════════════════════════
+function AddFilesScreen({ person, onMerge, onBack, dark, toggleTheme }) {
+  const [files,    setFiles]    = useState([]);
+  const [loading,  setLoading]  = useState(false);
+  const [progress, setProgress] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef();
+
+  const addFiles = raw => {
+    const valid=Array.from(raw).filter(f=>f.name.endsWith(".csv")||f.name.endsWith(".pdf"));
+    setFiles(prev=>{const names=new Set(prev.map(f=>f.name));return [...prev,...valid.filter(f=>!names.has(f.name))];});
+  };
+  const handleDrop = e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
+
+  const handleProcess = async () => {
+    if(!files.length) return;
+    setLoading(true);
+    const all=[];
+    for(const file of files){setProgress(`Lendo ${file.name}…`);try{all.push(...(await processFile(file,person.name)));}catch(e){console.error(e);}}
+    setLoading(false); setProgress("");
+    if(!all.length){alert("Nenhuma transação encontrada nos novos arquivos.");return;}
+    onMerge(person.name, all, files.map(f=>f.name));
+  };
+
+  const guessCard = n => {
+    const l=n.toLowerCase();
+    if(l.includes("nubank")) return {label:"Nubank",color:"#8c52ff"};
+    if(l.includes("inter"))  return {label:"Inter", color:"#ff6b00"};
+    if(l.includes("fatura_")||l.includes("ailos")) return {label:"Ailos",color:"#00a86b"};
+    return {label:"PDF/CSV",color:"#64748b"};
+  };
+
+  return (
+    <div className="upload-screen">
+      <div style={{display:"flex",justifyContent:"space-between",width:"100%",maxWidth:480}}>
+        <button className="dh-icon-btn tap" onClick={onBack}>←</button>
+        <button className="dh-icon-btn tap" onClick={toggleTheme}>{dark?"☀️":"🌙"}</button>
+      </div>
+
+      <div className="upload-inner anim-fade-up">
+        <div style={{display:"flex",alignItems:"center",gap:12,background:"var(--bg-card)",border:`1px solid ${person.color}40`,borderRadius:14,padding:"12px 16px",marginBottom:20}}>
+          <PersonAvatar name={person.name} color={person.color} size={40} fontSize={15}/>
+          <div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:800,color:person.color}}>{person.name}</div>
+            <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{person.transactions.length} transações carregadas</div>
+          </div>
+        </div>
+
+        {person.fileNames&&person.fileNames.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:10,color:"var(--text-faint)",letterSpacing:".1em",marginBottom:8}}>ARQUIVOS JÁ CARREGADOS</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {person.fileNames.map((fn,i)=>{
+                const card=guessCard(fn);
+                return (
+                  <span key={i} style={{fontSize:9,padding:"3px 8px",borderRadius:6,background:card.color+"15",color:card.color,border:`1px solid ${card.color}30`,fontFamily:"'DM Mono',monospace"}}>{fn}</span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="upload-header" style={{marginBottom:20}}>
+          <span className="upload-emoji">📁</span>
+          <div className="upload-title">Adicionar arquivos</div>
+          <div className="upload-sub">Selecione novos arquivos para {person.name}</div>
+        </div>
+
+        <input ref={inputRef} type="file" multiple accept=".csv,.pdf" style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
+        <div className={`upload-drop-zone tap${dragOver?" drag-over":""}`}
+          onClick={()=>inputRef.current?.click()}
+          onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+          onDragLeave={()=>setDragOver(false)}
+          onDrop={handleDrop}>
+          <span className="upload-drop-icon">{dragOver?"📂":"📁"}</span>
+          <span className="upload-drop-text">Selecionar ou soltar arquivos</span>
+          <span className="upload-drop-hint">.CSV (Nubank) · .PDF (Ailos / Inter)</span>
+        </div>
+
+        {files.length>0&&(
+          <div className="upload-file-list">
+            <div className="ufl-header">{files.length} NOVO{files.length>1?"S":""} ARQUIVO{files.length>1?"S":""}</div>
+            {files.map((f,i)=>{
+              const card=guessCard(f.name);
+              return (
+                <div key={i} className="ufl-item">
+                  <span className="ufl-icon">{f.name.endsWith(".pdf")?"📄":"📊"}</span>
+                  <div className="ufl-meta"><div className="ufl-name">{f.name}</div><div className="ufl-size">{(f.size/1024).toFixed(0)} KB</div></div>
+                  <span className="ufl-tag" style={{background:card.color+"20",color:card.color,borderColor:card.color+"50"}}>{card.label}</span>
+                  <button className="ufl-del tap" onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button className={`upload-cta tap-btn${files.length>0&&!loading?" ready":" disabled"}`} onClick={handleProcess} disabled={files.length===0||loading}>
+          {loading?(<><span className="spinner"/><span className="anim-pulse">{progress||"Processando…"}</span></>):
+            files.length===0?"Selecione ao menos um arquivo":`Adicionar ${files.length} arquivo${files.length>1?"s":""} a ${person.name} →`}
+        </button>
+        <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
+      </div>
     </div>
   );
 }
