@@ -342,6 +342,143 @@ function TransactionItem({ t, activePeople, onDelete, onEditCategory, striped, i
   );
 }
 
+// ─── IMPORT TUTORIAL ──────────────────────────
+function ImportTutorial() {
+  const [open, setOpen] = useState(false);
+  const cards = [
+    {
+      name: "Nubank",
+      color: "#8c52ff",
+      emoji: "💜",
+      badge: ".csv",
+      steps: [
+        "Abra o app do Nubank no celular",
+        'Toque em "Meu cartão de crédito"',
+        "Selecione a fatura desejada",
+        'Role até o fim e toque em "Exportar fatura"',
+        'Escolha "Exportar como CSV" e salve o arquivo',
+        "Importe o arquivo .csv aqui no dashboard",
+      ],
+      tip: "Exporte cada fatura separadamente para ter o histórico completo.",
+    },
+    {
+      name: "Inter",
+      color: "#ff6b00",
+      emoji: "🧡",
+      badge: ".pdf",
+      steps: [
+        "Acesse o app ou site do Banco Inter",
+        'Vá em "Cartão de crédito" → "Faturas"',
+        "Selecione a fatura desejada",
+        'Toque em "Ver fatura" ou "Detalhar fatura"',
+        "Toque no ícone de download / compartilhar",
+        "Salve ou compartilhe o arquivo PDF",
+        "Importe o arquivo .pdf aqui no dashboard",
+      ],
+      tip: "O Inter só disponibiliza exportação em PDF — não há opção de CSV.",
+    },
+    {
+      name: "Ailos / Viacredi",
+      color: "#00a86b",
+      emoji: "💚",
+      badge: ".pdf",
+      steps: [
+        "Acesse o app ou internet banking da Ailos/Viacredi",
+        'Navegue até "Cartão de crédito" → "Faturas"',
+        "Selecione o mês desejado",
+        'Clique em "Visualizar fatura" ou "2ª via"',
+        "Faça o download do PDF gerado",
+        "Importe o arquivo .pdf aqui no dashboard",
+      ],
+      tip: 'O arquivo da Ailos contém "VIACREDI" ou "AILOS" — o sistema detecta automaticamente.',
+    },
+  ];
+
+  return (
+    <div style={{marginTop:16,marginBottom:4}}>
+      <button
+        className="tap"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
+          padding:"10px 14px",borderRadius:10,border:"1px solid var(--border-med)",
+          background:"var(--bg-input)",cursor:"pointer",
+          color:"var(--text-sec)",fontSize:12,fontFamily:"'DM Mono',monospace",
+          transition:"all .15s",
+        }}
+        onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
+        onMouseOut={e=>e.currentTarget.style.borderColor="var(--border-med)"}
+      >
+        <span style={{display:"flex",alignItems:"center",gap:7}}>
+          <span>📖</span>
+          <span>Como exportar minha fatura?</span>
+        </span>
+        <span style={{
+          fontSize:10,opacity:.6,display:"inline-block",
+          transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s",
+        }}>▼</span>
+      </button>
+
+      {open && (
+        <div className="anim-fade-up" style={{marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
+          {cards.map(c => (
+            <div key={c.name} style={{
+              borderRadius:12,border:`1px solid ${c.color}30`,
+              background:`${c.color}08`,overflow:"hidden",
+            }}>
+              <div style={{
+                display:"flex",alignItems:"center",gap:10,
+                padding:"10px 14px",borderBottom:`1px solid ${c.color}20`,
+                background:`${c.color}12`,
+              }}>
+                <span style={{fontSize:18}}>{c.emoji}</span>
+                <span style={{flex:1,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:c.color}}>{c.name}</span>
+                <span style={{
+                  fontSize:9,padding:"2px 7px",borderRadius:5,fontFamily:"'DM Mono',monospace",
+                  background:`${c.color}20`,color:c.color,border:`1px solid ${c.color}40`,fontWeight:700,
+                }}>{c.badge}</span>
+              </div>
+              <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:7}}>
+                {c.steps.map((step, i) => (
+                  <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <span style={{
+                      flexShrink:0,width:18,height:18,borderRadius:"50%",
+                      background:`${c.color}20`,border:`1px solid ${c.color}40`,
+                      color:c.color,fontSize:9,fontWeight:700,fontFamily:"'DM Mono',monospace",
+                      display:"flex",alignItems:"center",justifyContent:"center",marginTop:2,
+                    }}>{i+1}</span>
+                    <span style={{fontSize:12,color:"var(--text-sec)",lineHeight:1.55}}>{step}</span>
+                  </div>
+                ))}
+                <div style={{
+                  marginTop:4,padding:"8px 10px",borderRadius:8,
+                  background:`${c.color}10`,border:`1px solid ${c.color}25`,
+                  display:"flex",gap:7,alignItems:"flex-start",
+                }}>
+                  <span style={{fontSize:11,flexShrink:0}}>💡</span>
+                  <span style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{c.tip}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div style={{
+            padding:"10px 14px",borderRadius:10,
+            border:"1px solid var(--border-soft)",background:"var(--bg-input)",
+            display:"flex",gap:8,alignItems:"flex-start",
+          }}>
+            <span style={{fontSize:13,flexShrink:0}}>🔒</span>
+            <span style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.6}}>
+              Todos os arquivos são processados{" "}
+              <strong style={{color:"var(--text-sec)"}}>100% localmente</strong>{" "}
+              no seu dispositivo. Nenhum dado é enviado para servidores externos.
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════
 //  HOME SCREEN
 // ═══════════════════════════════════════════════
@@ -412,11 +549,12 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
         )}
 
         <button className="tap-btn" onClick={onAddPerson}
-          style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13,cursor:"pointer",fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}
-          onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
+          style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13,cursor:"pointer",fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}          onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
           onMouseOut={e=>e.currentTarget.style.borderColor="var(--border-med)"}>
           + Adicionar {people.length===0?"pessoa":"outra pessoa"}
         </button>
+
+        <ImportTutorial />
 
         <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
       </div>
