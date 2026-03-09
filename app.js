@@ -176,14 +176,18 @@ async function parsePDF(file, personName) {
 const EXCLUDED_TITLES = [
   "pagamento recebido","pagamento efetuado","crédito em rotativo",
   "credito em rotativo","saldo em rotativo","crédito rotativo",
-  "credito rotativo","saldo em atraso","estorno","reembolso",
-  "cashback","devolução","devolucao",
+  "credito rotativo","saldo em atraso","saldo devedor","saldo anterior",
+  "estorno","reembolso","cashback","devolução","devolucao",
 ];
 
 function isExcludedTransaction(t) {
   if (t.amount <= 0) return true;
   const tl = t.title.toLowerCase();
-  return EXCLUDED_TITLES.some(ex => tl.includes(ex));
+  // exclui pagamentos e saldos independente do valor (positivo ou negativo)
+  if (EXCLUDED_TITLES.some(ex => tl.includes(ex))) return true;
+  // exclui qualquer transação categorizada como Pagamento
+  if (t.category === "Pagamento") return true;
+  return false;
 }
 
 async function processFile(file, personName) {
@@ -332,9 +336,8 @@ function TransactionItem({ t, activePeople, onDelete, onEditCategory, striped, i
 // ═══════════════════════════════════════════════
 function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAddFiles, dark, toggleTheme }) {
   const canJoin = people.length >= 2;
-
   const stats = people.map(p => {
-    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
+    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     return {...p, total:exp.reduce((s,t)=>s+t.amount,0), count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
   });
 
@@ -980,10 +983,9 @@ function KpiCard({ icon, label, value, sub, color, onClick }) {
 // ─── COMPARISON PANEL ─────────────────────────
 function ComparisonPanel({ activePeople, filtered }) {
   const isMobile = useWindowWidth() < 768;
-  const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
-  const stats=activePeople.map(p=>{
+  const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};  const stats=activePeople.map(p=>{
     const pTxns=filtered.filter(t=>t.person===p.name);
-    const exp=pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
+    const exp=pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     const total=exp.reduce((s,t)=>s+t.amount,0);
     const cats={};exp.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount;});
     const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
@@ -992,7 +994,7 @@ function ComparisonPanel({ activePeople, filtered }) {
   const maxTotal=Math.max(...stats.map(s=>s.total),1);
   const catChartData=Object.keys(CAT_COLORS).map(cat=>{
     const entry={cat:cat.split("/")[0]};
-    stats.forEach(s=>{entry[s.name]=+filtered.filter(t=>t.person===s.name&&t.category===cat&&t.amount>0&&t.category!=="Encargos/Juros").reduce((sum,t)=>sum+t.amount,0).toFixed(2);});
+    stats.forEach(s=>{entry[s.name]=+filtered.filter(t=>t.person===s.name&&t.category===cat&&t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento").reduce((sum,t)=>sum+t.amount,0).toFixed(2);});
     return entry;
   }).filter(d=>stats.some(s=>d[s.name]>0)).sort((a,b)=>stats.reduce((s,p)=>s+(b[p.name]||0),0)-stats.reduce((s,p)=>s+(a[p.name]||0),0)).slice(0,8);
 
@@ -1303,9 +1305,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   const filtered=useMemo(()=>{
     const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
-    const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];
-
-    return transactions.filter(t=>{
+    const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];    return transactions.filter(t=>{
       if(selectedPerson!=="all"&&t.person!==selectedPerson) return false;
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
@@ -1314,7 +1314,10 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       if(allTerms.length>0 && !allTerms.some(term=>
         t.title.toLowerCase().includes(term.toLowerCase()) ||
         t.category.toLowerCase().includes(term.toLowerCase())
-      )) return false;
+      )) return false;      // sempre exclui pagamentos, saldos e valores não-positivos
+      if(t.amount<=0) return false;
+      if(t.category==="Pagamento") return false;
+      if(EXCLUDED_TITLES.some(ex=>t.title.toLowerCase().includes(ex))) return false;
       if(txnType==="expense"&&t.category==="Encargos/Juros") return false;
       if(txnType==="charge"&&t.category!=="Encargos/Juros") return false;
       if(amountMin&&Math.abs(t.amount)<parseFloat(amountMin)) return false;
@@ -1326,28 +1329,25 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       const d=String(a[sortBy]).localeCompare(String(b[sortBy]));return sortDir==="desc"?-d:d;
     });
   },[transactions,filters,sortBy,sortDir]);
-
   const expenses     = useMemo(()=>{
     if(filters.txnType==="charge") return filtered.filter(t=>t.category==="Encargos/Juros");
-    return filtered.filter(t=>t.category!=="Encargos/Juros");
+    return filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
   },[filtered,filters.txnType]);
   const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+Math.abs(t.amount),0),[expenses]);
   const totalCharge  = useMemo(()=>filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0),[filtered]);
-  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
-  const catStats = useMemo(()=>{
-    const base=filtered.filter(t=>t.category!=="Encargos/Juros");
+  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);  const catStats = useMemo(()=>{
+    const base=filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     const total=base.reduce((s,t)=>s+t.amount,0);
     const map={};
     base.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});
     return {map,total};
   },[filtered]);
-
   // ── FIX 1: monthlyTrend agora respeita txnType==="charge" ──
   const monthlyTrend = useMemo(()=>{
     const map={};
     const base = filters.txnType==="charge"
-      ? filtered
-      : filtered.filter(t=>t.category!=="Encargos/Juros");
+      ? filtered.filter(t=>t.category==="Encargos/Juros")
+      : filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     base.forEach(t=>{
       if(!map[t.month]) map[t.month]={month:t.month,total:0};
       map[t.month].total+=t.amount;
@@ -1359,12 +1359,11 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
   },[filtered,filters.txnType]);
 
   const topMerchants=useMemo(()=>{const map={};expenses.forEach(t=>{const key=t.title.replace(/ - Parcela \d+\/\d+/g,"").trim();if(!map[key])map[key]={name:key,total:0,count:0};map[key].total+=t.amount;map[key].count++;});return Object.values(map).sort((a,b)=>b.total-a.total).slice(0,10).map(m=>({...m,total:+m.total.toFixed(2)}));},[expenses]);
-
   // ── FIX 2: cardStats agora respeita txnType==="charge" ──
   const cardStats=useMemo(()=>uniqueCards.map(card=>{
     const txns = filters.txnType==="charge"
-      ? filtered.filter(t=>t.card===card)
-      : filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros");
+      ? filtered.filter(t=>t.card===card&&t.category==="Encargos/Juros")
+      : filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
     return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};
   }),[filtered,uniqueCards,filters.txnType]);
 
