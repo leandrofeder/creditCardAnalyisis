@@ -22,6 +22,27 @@
 </head>
 <body>
   <div id="root"></div>
+
+  <!-- ① utilitários e dados globais -->
+  <script type="text/babel" data-presets="react" src="constants.js"></script>
+  <script type="text/babel" data-presets="react" src="utils.js"></script>
+  <script type="text/babel" data-presets="react" src="hooks.js"></script>
+  <script type="text/babel" data-presets="react" src="cache.js"></script>
+  <script type="text/babel" data-presets="react" src="parsers.js"></script>
+
+  <!-- ② componentes (ordem: base → compostos → telas) -->
+  <script type="text/babel" data-presets="react" src="components/PersonAvatar.js"></script>
+  <script type="text/babel" data-presets="react" src="components/KpiCard.js"></script>
+  <script type="text/babel" data-presets="react" src="components/TransactionItem.js"></script>
+  <script type="text/babel" data-presets="react" src="components/Filters.js"></script>
+  <script type="text/babel" data-presets="react" src="components/Headers.js"></script>
+  <script type="text/babel" data-presets="react" src="components/Tabs.js"></script>
+  <script type="text/babel" data-presets="react" src="components/Dashboard.js"></script>
+  <script type="text/babel" data-presets="react" src="components/HomeScreen.js"></script>
+  <script type="text/babel" data-presets="react" src="components/UploadScreen.js"></script>
+  <script type="text/babel" data-presets="react" src="components/AddFilesScreen.js"></script>
+
+  <!-- ③ raiz da aplicação -->
   <script type="text/babel" data-presets="react" src="app.js"></script>
 </body>
 </html>
