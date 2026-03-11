@@ -56,7 +56,7 @@ const CAT_COLORS = {
   "Cafés/Pequenos":"#fb923c","Conveniência":"#c026d3","Parcelamentos":"#64748b",
   "Encargos/Juros":"#ef4444","Estacionamento":"#94a3b8",
   "Presentes/Bazar":"#f43f5e","Educação":"#0ea5e9","Telecomunicações":"#38bdf8",
-  "Seguros":"#d97706","Beleza":"#f472b6","Pet":"#84cc16","Outros":"#6b7280",
+  "Seguros":"#d97706","Outros":"#6b7280",
 };
 const CARD_COLORS   = { Nubank:"#8c52ff", Ailos:"#00a86b", Inter:"#ff6b00" };
 const PERSON_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#06b6d4","#8b5cf6","#eab308","#ec4899"];
@@ -66,8 +66,6 @@ const CAT_GROUPS = [
   { label:"🚗 Transporte",   cats:["Transporte","Gasolina","Estacionamento"] },
   { label:"🏥 Saúde",        cats:["Saúde","Academia/Saúde"] },
   { label:"💻 Digital",      cats:["Tecnologia/Assinaturas","Compras Online"] },
-  { label:"💅 Beleza",       cats:["Beleza"] },
-  { label:"🐾 Pet",          cats:["Pet"] },
 ];
 
 const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -89,26 +87,25 @@ function normalizeMonthLabel(raw) {
 function categorize(title) {
   const t = title.toLowerCase();
   if(t.includes("uber")||t.includes("99app")||t.includes("*99")) return "Transporte";
-  if(t.includes("fitland")||t.includes("viva mais prodtos natur")||t.includes("koch")||t.includes("supermercado")||t.includes("rede top")||t.includes("comercial ruediger")||t.includes("sams club")||t.includes("superferreira")||t.includes("hipermercado")||t.includes("cooper")||t.includes("mercado garcia")||t.includes("cs koch")||t.includes("atacadao")||t.includes("carrefour")) return "Supermercado";
+  if(t.includes("fitland")||t.includes("koch")||t.includes("supermercado")||t.includes("rede top")||t.includes("sams club")||t.includes("hipermercado")||t.includes("cooper")||t.includes("mercado garcia")||t.includes("cs koch")||t.includes("atacadao")||t.includes("carrefour")) return "Supermercado";
   if(t.includes("farmacia")||t.includes("saude")||t.includes("otica")||t.includes("medic")||t.includes("drogasil")) return "Saúde";
   if(t.includes("academia")||t.includes("smartfit")||t.includes("bluefit")) return "Academia/Saúde";
   if(t.includes("apple")||t.includes("microsoft")||t.includes("canva")||t.includes("hostgator")||t.includes("applecombill")||t.includes("netflix")||t.includes("spotify")||t.includes("amazon prime")||t.includes("youtube")||t.includes("chatgpt")||t.includes("openai")||t.includes("dropbox")||t.includes("adobe")||t.includes("icloud")||t.includes("amazonprimebr")) return "Tecnologia/Assinaturas";
   if(t.includes("amazon")||t.includes("shopee")||t.includes("mercadolivre")||t.includes("magazine")) return "Compras Online";
-  if(t.includes("posto")||t.includes("combustivel")||t.includes("gasolina")||t.includes("shell")||t.includes("ipiranga")||t.includes("petrob")||t.includes("martini comercio de")) return "Gasolina";
-  if(t.includes("restaurante")||t.includes("capitao dog")||t.includes("boli bowl")||t.includes("hotel sesc blumenau")||t.includes("kalzone")||t.includes("toscana")||t.includes("divino fogao")||t.includes("the best acai")||t.includes("acai da barra")||t.includes("foodbech")||t.includes("hipermercado")||t.includes("lanchonete")||t.includes("pizz")||t.includes("burger")||t.includes("sushi")||t.includes("churrascaria")||t.includes("bar ")||t.includes("grill")||t.includes("aromata")||t.includes("alemaobatata blumenau")) return "Gastronomia";
-  if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("deliv")||t.includes("uber eats")||t.includes("ifd")) return "Delivery";
-  if(t.includes("padaria")||t.includes("confeitaria")||t.includes("pao ")||t.includes("bakery")||t.includes("papicori")||t.includes("flsbrunch")||t.includes("panificadora")||t.includes("portus")) return "Padaria/Alimentação";
-  if(t.includes("cafe")||t.includes("café")||t.includes("coffee")||t.includes("starbucks")||t.includes("aromapress maquinas")) return "Cafés/Pequenos";
-  if(t.includes("conveniencia")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")||t.includes("baitah")||t.includes("54656637adan")) return "Conveniência";
+  if(t.includes("posto")||t.includes("combustivel")||t.includes("gasolina")||t.includes("shell")||t.includes("ipiranga")||t.includes("petrob")) return "Gasolina";
+  if(t.includes("restaurante")||t.includes("lanchonete")||t.includes("pizz")||t.includes("burger")||t.includes("sushi")||t.includes("churrascaria")||t.includes("bar ")||t.includes("grill")) return "Gastronomia";
+  if(t.includes("ifood")||t.includes("rappi")||t.includes("delivery")||t.includes("uber eats")) return "Delivery";
+  if(t.includes("padaria")||t.includes("confeitaria")||t.includes("pao ")||t.includes("bakery")) return "Padaria/Alimentação";
+  if(t.includes("cafe")||t.includes("café")||t.includes("coffee")||t.includes("starbucks")) return "Cafés/Pequenos";
+  if(t.includes("conveniencia")||t.includes("loja conv")||t.includes("am pm")||t.includes("am/pm")||t.includes("shell select")||t.includes("br mania")||t.includes("extra")) return "Conveniência";
   if(t.includes("pagamento recebido")||t.includes("pagamento efetuado")) return "Pagamento";
   if(t.includes("parcela")||t.includes("siapi")||t.includes("panasonic")||t.includes("prata fina")||t.includes("isabela")||t.includes("s v comercio")) return "Parcelamentos";
   if(t.includes("juros")||t.includes("multa")||t.includes("iof")||t.includes("saldo em")||t.includes("rotativo")||t.includes("mora")) return "Encargos/Juros";
-  if(t.includes("estacionamento")||t.includes("estapar")||t.includes("blumenau norte shoppin")||t.includes("parking")||t.includes("cs park")) return "Estacionamento";
-  if(t.includes("bazar")||t.includes("reuter")||t.includes("tecnofesta")||t.includes("milium")||t.includes("cacau")||t.includes("oboticario")||t.includes("havan")||t.includes("floricultura")) return "Presentes/Bazar";
+  if(t.includes("estacionamento")||t.includes("estapar")||t.includes("blumenau norte shoppin")||t.includes("parking")) return "Estacionamento";
+  if(t.includes("bazar")||t.includes("reuter")||t.includes("tecnofesta")||t.includes("milium")||t.includes("cacau")||t.includes("oboticario")) return "Presentes/Bazar";
   if(t.includes("leiturinha")||t.includes("escola")||t.includes("universidade")||t.includes("curso")) return "Educação";
-  if(t.includes("vivo")||t.includes("intercel")||t.includes("rcga")||t.includes("claro")||t.includes("tim ")||t.includes("oi ")) return "Telecomunicações";  if(t.includes("allianz")||t.includes("seguro")||t.includes("bradesco seguros")) return "Seguros";
-  if(t.includes("salao")||t.includes("salão")||t.includes("barbearia")||t.includes("barbeiro")||t.includes("cabeleireiro")||t.includes("cabeleireira")||t.includes("beleza")||t.includes("estetica")||t.includes("estética")||t.includes("manicure")||t.includes("pedicure")||t.includes("sobrancelha")||t.includes("depilacao")||t.includes("depilação")||t.includes("spa ")||t.includes("nail ")||t.includes("nails")||t.includes("cosmetico")||t.includes("cosmeticos")||t.includes("beauty")||t.includes("studio hair")||t.includes("hair ")) return "Beleza";
-  if(t.includes("pet")||t.includes("veterinario")||t.includes("veterinária")||t.includes("veterinario")||t.includes("veterinário")||t.includes("petshop")||t.includes("pet shop")||t.includes("racao")||t.includes("ração")||t.includes("agro")||t.includes("clinica vet")||t.includes("animal")||t.includes("canil")||t.includes("cobasi")) return "Pet";
+  if(t.includes("vivo")||t.includes("intercel")||t.includes("rcga")||t.includes("claro")||t.includes("tim ")||t.includes("oi ")) return "Telecomunicações";
+  if(t.includes("allianz")||t.includes("seguro")||t.includes("bradesco seguros")) return "Seguros";
   return "Outros";
 }
 
@@ -125,7 +122,13 @@ function parseCSV(text, filename, personName) {
     parts.push(cur);
     if(parts.length<3) return null;
     const date=parts[0].trim();
-    const amount=parseFloat(parts[parts.length-1].trim().replace(",","."));
+
+    // ── FIX: No CSV do Nubank, despesas são NEGATIVAS e pagamentos são POSITIVOS.
+    // Negamos o valor para que despesas fiquem positivas e pagamentos negativos
+    // (os pagamentos serão excluídos pelo filtro amount <= 0 em isExcludedTransaction).
+    const rawAmount = parseFloat(parts[parts.length-1].trim().replace(",","."));
+    const amount = -(rawAmount);
+
     const title=parts.slice(1,parts.length-1).join(",").trim().replace(/^"|"$/g,"");
     if(!date||isNaN(amount)) return null;
     const year=date.split("-")[0]||new Date().getFullYear().toString();
@@ -163,15 +166,66 @@ async function parsePDF(file, personName) {
   const monthPart=ptMap[rawM]||(!isYearOnly?rawM:null)||fileBase;
   const monthLabel=normalizeMonthLabel(`${monthPart}/${year}`);
   const txns=[];
-  const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};  if(isAilos){
-    const matches=[...text.matchAll(/(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+([^R\n]{3,60}?)\s+R\$\s*([\d.]+,\d{2})/gi)];
-    for(const m of matches){
-      const amount=parseFloat(m[4].replace(/\./g,"").replace(",","."));
-      const title=m[3].replace(/\s{2,}/g," ").trim();
-      // ignora títulos que são apenas um ano (ex: "2025", "2026") — parcela mínima do Ailos
-      if(/^\d{4}$/.test(title)) continue;
-      if(!isNaN(amount)&&amount>0&&title.length>1)
-        txns.push({date:`${year}-${ptNum[m[2].toUpperCase()]||"01"}-${m[1].padStart(2,"0")}`,title,amount,card,month:monthLabel,year,category:categorize(title),person:personName});
+  const ptNum={JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};
+  if(isAilos){
+    // Determina o ano correto para cada mês a partir do texto
+    // O PDF pode conter transações de meses/anos diferentes
+    const yearForMonth = (monAbbr) => {
+      // Tenta encontrar referência explícita de ano próxima ao mês no texto
+      const pattern = new RegExp(monAbbr + '[\\s\\S]{0,60}?(20\\d{2})', 'i');
+      const m = text.match(pattern);
+      return m ? m[1] : year;
+    };
+
+    // ── Bloco 1: MOVIMENTAÇÕES DA CONTA (saldo/encargos)
+    // Formato: "DD MES DESCRICAO R$ valor" ou "DD MES DESCRICAO -R$ valor"
+    // Valores negativos (DESC, pagamentos) são ignorados conforme regra de negócio
+    const movMatches = [...text.matchAll(
+      /(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+([^\n]{3,80}?)\s+(-?)R\$\s*([\d.]+,\d{2})/gi
+    )];
+    for(const m of movMatches){
+      const negative = m[4] === '-';
+      if(negative) continue; // ignora negativos (descontos, pagamentos)
+      const amount = parseFloat(m[5].replace(/\./g,"").replace(",","."));
+      const title  = m[3].replace(/\s{2,}/g," ").trim();
+      // Exclui linhas que são cabeçalhos ou totais
+      if(!isNaN(amount) && amount > 0 && title.length > 1
+         && !title.match(/^(DATA|DESCRI|CIDADE|TOTAL|SALDO|LEANDRO|PÁGINA|Página|REF\s)/i)){
+        const mon = ptNum[m[2].toUpperCase()] || "01";
+        const txYear = yearForMonth(m[2].toUpperCase());
+        txns.push({
+          date:`${txYear}-${mon}-${m[1].padStart(2,"0")}`,
+          title, amount, card, month:monthLabel, year:txYear,
+          category:categorize(title), person:personName
+        });
+      }
+    }
+
+    // ── Bloco 2: Compras do cartão com CIDADE
+    // Formato: "DD MES DESCRICAO CIDADE R$ valor"  (sem -R$)
+    // A cidade é uma palavra em maiúsculas, pode ter espaços (ex: SAO PAULO)
+    // Regex: data + descrição + cidade (caps) + valor positivo
+    const compraMatches = [...text.matchAll(
+      /(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+([^\n]{3,80}?)\s{2,}([A-ZÁÉÍÓÚÃÕ][A-ZÁÉÍÓÚÃÕ ]{1,25}?)\s+R\$\s*([\d.]+,\d{2})/g
+    )];
+    for(const m of compraMatches){
+      const amount = parseFloat(m[5].replace(/\./g,"").replace(",","."));
+      const title  = m[3].replace(/\s{2,}/g," ").trim();
+      const city   = m[4].trim();
+      if(!isNaN(amount) && amount > 0 && title.length > 1
+         && !title.match(/^(DATA|DESCRI|CIDADE|TOTAL|SALDO|LEANDRO|PÁGINA|Página|REF\s)/i)){
+        const mon = ptNum[m[2].toUpperCase()] || "01";
+        const txYear = yearForMonth(m[2].toUpperCase());
+        const key = `${txYear}-${mon}-${m[1].padStart(2,"0")}|${title}|${amount}`;
+        // Evita duplicata com o bloco anterior
+        if(!txns.some(t => `${t.date}|${t.title}|${t.amount}` === key)){
+          txns.push({
+            date:`${txYear}-${mon}-${m[1].padStart(2,"0")}`,
+            title, amount, card, month:monthLabel, year:txYear,
+            category:categorize(title), person:personName
+          });
+        }
+      }
     }
   }
   if(isInter){
@@ -185,20 +239,15 @@ async function parsePDF(file, personName) {
 const EXCLUDED_TITLES = [
   "pagamento recebido","pagamento efetuado","crédito em rotativo",
   "credito em rotativo","saldo em rotativo","crédito rotativo",
-  "credito rotativo","saldo em atraso","saldo devedor","saldo anterior",
-  "estorno","reembolso","cashback","devolução","devolucao", "p agamento on line   -   + r$"
+  "credito rotativo","saldo em atraso","estorno","reembolso",
+  "cashback","devolução","devolucao",
 ];
 
 function isExcludedTransaction(t) {
+  // Exclui valores não-positivos (pagamentos do CSV do Nubank chegam negativos após a negação)
   if (t.amount <= 0) return true;
   const tl = t.title.toLowerCase();
-  // exclui pagamentos e saldos independente do valor (positivo ou negativo)
-  if (EXCLUDED_TITLES.some(ex => tl.includes(ex))) return true;
-  // exclui qualquer transação categorizada como Pagamento
-  if (t.category === "Pagamento") return true;
-  // exclui títulos que são somente um ano (ex: "2025", "2026") — parcela mínima Ailos
-  if (/^\d{4}$/.test(t.title.trim())) return true;
-  return false;
+  return EXCLUDED_TITLES.some(ex => tl.includes(ex));
 }
 
 async function processFile(file, personName) {
@@ -342,150 +391,14 @@ function TransactionItem({ t, activePeople, onDelete, onEditCategory, striped, i
   );
 }
 
-// ─── IMPORT TUTORIAL ──────────────────────────
-function ImportTutorial() {
-  const [open, setOpen] = useState(false);
-  const cards = [
-    {
-      name: "Nubank",
-      color: "#8c52ff",
-      emoji: "💜",
-      badge: ".csv",
-      steps: [
-        "Abra o app do Nubank no celular",
-        'Toque em "Meu cartão de crédito"',
-        "Selecione a fatura desejada",
-        'Role até o fim e toque em "Exportar fatura"',
-        'Escolha "Exportar como CSV" e salve o arquivo',
-        "Importe o arquivo .csv aqui no dashboard",
-      ],
-      tip: "Exporte cada fatura separadamente para ter o histórico completo.",
-    },
-    {
-      name: "Inter",
-      color: "#ff6b00",
-      emoji: "🧡",
-      badge: ".pdf",
-      steps: [
-        "Acesse o app ou site do Banco Inter",
-        'Vá em "Cartão de crédito" → "Faturas"',
-        "Selecione a fatura desejada",
-        'Toque em "Ver fatura" ou "Detalhar fatura"',
-        "Toque no ícone de download / compartilhar",
-        "Salve ou compartilhe o arquivo PDF",
-        "Importe o arquivo .pdf aqui no dashboard",
-      ],
-      tip: "O Inter só disponibiliza exportação em PDF — não há opção de CSV.",
-    },
-    {
-      name: "Ailos / Viacredi",
-      color: "#00a86b",
-      emoji: "💚",
-      badge: ".pdf",
-      steps: [
-        "Acesse o app ou internet banking da Ailos/Viacredi",
-        'Navegue até "Cartão de crédito" → "Faturas"',
-        "Selecione o mês desejado",
-        'Clique em "Visualizar fatura" ou "2ª via"',
-        "Faça o download do PDF gerado",
-        "Importe o arquivo .pdf aqui no dashboard",
-      ],
-      tip: 'O arquivo da Ailos contém "VIACREDI" ou "AILOS" — o sistema detecta automaticamente.',
-    },
-  ];
-
-  return (
-    <div style={{marginTop:16,marginBottom:4}}>
-      <button
-        className="tap"
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
-          padding:"10px 14px",borderRadius:10,border:"1px solid var(--border-med)",
-          background:"var(--bg-input)",cursor:"pointer",
-          color:"var(--text-sec)",fontSize:12,fontFamily:"'DM Mono',monospace",
-          transition:"all .15s",
-        }}
-        onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
-        onMouseOut={e=>e.currentTarget.style.borderColor="var(--border-med)"}
-      >
-        <span style={{display:"flex",alignItems:"center",gap:7}}>
-          <span>📖</span>
-          <span>Como exportar minha fatura?</span>
-        </span>
-        <span style={{
-          fontSize:10,opacity:.6,display:"inline-block",
-          transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s",
-        }}>▼</span>
-      </button>
-
-      {open && (
-        <div className="anim-fade-up" style={{marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
-          {cards.map(c => (
-            <div key={c.name} style={{
-              borderRadius:12,border:`1px solid ${c.color}30`,
-              background:`${c.color}08`,overflow:"hidden",
-            }}>
-              <div style={{
-                display:"flex",alignItems:"center",gap:10,
-                padding:"10px 14px",borderBottom:`1px solid ${c.color}20`,
-                background:`${c.color}12`,
-              }}>
-                <span style={{fontSize:18}}>{c.emoji}</span>
-                <span style={{flex:1,fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:c.color}}>{c.name}</span>
-                <span style={{
-                  fontSize:9,padding:"2px 7px",borderRadius:5,fontFamily:"'DM Mono',monospace",
-                  background:`${c.color}20`,color:c.color,border:`1px solid ${c.color}40`,fontWeight:700,
-                }}>{c.badge}</span>
-              </div>
-              <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:7}}>
-                {c.steps.map((step, i) => (
-                  <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                    <span style={{
-                      flexShrink:0,width:18,height:18,borderRadius:"50%",
-                      background:`${c.color}20`,border:`1px solid ${c.color}40`,
-                      color:c.color,fontSize:9,fontWeight:700,fontFamily:"'DM Mono',monospace",
-                      display:"flex",alignItems:"center",justifyContent:"center",marginTop:2,
-                    }}>{i+1}</span>
-                    <span style={{fontSize:12,color:"var(--text-sec)",lineHeight:1.55}}>{step}</span>
-                  </div>
-                ))}
-                <div style={{
-                  marginTop:4,padding:"8px 10px",borderRadius:8,
-                  background:`${c.color}10`,border:`1px solid ${c.color}25`,
-                  display:"flex",gap:7,alignItems:"flex-start",
-                }}>
-                  <span style={{fontSize:11,flexShrink:0}}>💡</span>
-                  <span style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{c.tip}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-          <div style={{
-            padding:"10px 14px",borderRadius:10,
-            border:"1px solid var(--border-soft)",background:"var(--bg-input)",
-            display:"flex",gap:8,alignItems:"flex-start",
-          }}>
-            <span style={{fontSize:13,flexShrink:0}}>🔒</span>
-            <span style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.6}}>
-              Todos os arquivos são processados{" "}
-              <strong style={{color:"var(--text-sec)"}}>100% localmente</strong>{" "}
-              no seu dispositivo. Nenhum dado é enviado para servidores externos.
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ═══════════════════════════════════════════════
 //  HOME SCREEN
 // ═══════════════════════════════════════════════
 function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAddFiles, dark, toggleTheme }) {
   const canJoin = people.length >= 2;
+
   const stats = people.map(p => {
-    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+    const exp=p.transactions.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
     return {...p, total:exp.reduce((s,t)=>s+t.amount,0), count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
   });
 
@@ -549,12 +462,11 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
         )}
 
         <button className="tap-btn" onClick={onAddPerson}
-          style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13,cursor:"pointer",fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}          onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
+          style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--border-med)",background:"var(--bg-input)",color:"var(--text-sec)",fontSize:13,cursor:"pointer",fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}
+          onMouseOver={e=>e.currentTarget.style.borderColor="var(--border-strong)"}
           onMouseOut={e=>e.currentTarget.style.borderColor="var(--border-med)"}>
           + Adicionar {people.length===0?"pessoa":"outra pessoa"}
         </button>
-
-        <ImportTutorial />
 
         <div className="upload-privacy" style={{marginTop:14}}>🔒 100% local · seus dados não saem do dispositivo</div>
       </div>
@@ -1130,15 +1042,12 @@ function KpiCard({ icon, label, value, sub, color, onClick }) {
 }
 
 // ─── COMPARISON PANEL ─────────────────────────
-function ComparisonPanel({ activePeople, filtered, txnType }) {
+function ComparisonPanel({ activePeople, filtered }) {
   const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
-  const isCharge = txnType === "charge";
   const stats=activePeople.map(p=>{
     const pTxns=filtered.filter(t=>t.person===p.name);
-    const exp = isCharge
-      ? pTxns.filter(t=>t.amount>0&&t.category==="Encargos/Juros")
-      : pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+    const exp=pTxns.filter(t=>t.amount>0&&t.category!=="Encargos/Juros");
     const total=exp.reduce((s,t)=>s+t.amount,0);
     const cats={};exp.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount;});
     const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
@@ -1147,13 +1056,7 @@ function ComparisonPanel({ activePeople, filtered, txnType }) {
   const maxTotal=Math.max(...stats.map(s=>s.total),1);
   const catChartData=Object.keys(CAT_COLORS).map(cat=>{
     const entry={cat:cat.split("/")[0]};
-    stats.forEach(s=>{
-      entry[s.name]=+filtered.filter(t=>{
-        if(t.person!==s.name||t.category!==cat||t.amount<=0) return false;
-        if(isCharge) return t.category==="Encargos/Juros";
-        return t.category!=="Encargos/Juros"&&t.category!=="Pagamento";
-      }).reduce((sum,t)=>sum+t.amount,0).toFixed(2);
-    });
+    stats.forEach(s=>{entry[s.name]=+filtered.filter(t=>t.person===s.name&&t.category===cat&&t.amount>0&&t.category!=="Encargos/Juros").reduce((sum,t)=>sum+t.amount,0).toFixed(2);});
     return entry;
   }).filter(d=>stats.some(s=>d[s.name]>0)).sort((a,b)=>stats.reduce((s,p)=>s+(b[p.name]||0),0)-stats.reduce((s,p)=>s+(a[p.name]||0),0)).slice(0,8);
 
@@ -1197,7 +1100,7 @@ function ComparisonPanel({ activePeople, filtered, txnType }) {
 }
 
 // ─── OVERVIEW TAB ─────────────────────────────
-function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory, txnType }) {
+function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
   const isMobile = useWindowWidth() < 768;
   const ttStyle={background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const showComparison=activePeople.length>1;
@@ -1211,7 +1114,7 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
         <KpiCard icon="🛒" label="COMPRAS"         value={expenses.length} sub="transações" color="#06b6d4"/>
       </div>
 
-      {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered} txnType={txnType}/>}
+      {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered}/>}
 
       {cardStats.length>0&&(
         <div className="card-stats-grid">
@@ -1464,7 +1367,9 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   const filtered=useMemo(()=>{
     const { search, searchTags=[], selectedPerson, selectedCard, selectedYear, selectedMonth, categoryFilter=[], txnType, amountMin, amountMax } = filters;
-    const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];    return transactions.filter(t=>{
+    const allTerms = [...searchTags, ...(search.trim() ? [search.trim()] : [])];
+
+    return transactions.filter(t=>{
       if(selectedPerson!=="all"&&t.person!==selectedPerson) return false;
       if(selectedCard!=="all"&&t.card!==selectedCard) return false;
       if(selectedYear!=="all"&&t.year!==selectedYear) return false;
@@ -1473,12 +1378,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       if(allTerms.length>0 && !allTerms.some(term=>
         t.title.toLowerCase().includes(term.toLowerCase()) ||
         t.category.toLowerCase().includes(term.toLowerCase())
-      )) return false;      // sempre exclui pagamentos, saldos e valores não-positivos
-      if(t.amount<=0) return false;
-      if(t.category==="Pagamento") return false;
-      if(EXCLUDED_TITLES.some(ex=>t.title.toLowerCase().includes(ex))) return false;
-      // exclui títulos que são somente um ano (ex: "2025", "2026") — parcela mínima Ailos
-      if(/^\d{4}$/.test(t.title.trim())) return false;
+      )) return false;
       if(txnType==="expense"&&t.category==="Encargos/Juros") return false;
       if(txnType==="charge"&&t.category!=="Encargos/Juros") return false;
       if(amountMin&&Math.abs(t.amount)<parseFloat(amountMin)) return false;
@@ -1490,25 +1390,27 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
       const d=String(a[sortBy]).localeCompare(String(b[sortBy]));return sortDir==="desc"?-d:d;
     });
   },[transactions,filters,sortBy,sortDir]);
+
   const expenses     = useMemo(()=>{
     if(filters.txnType==="charge") return filtered.filter(t=>t.category==="Encargos/Juros");
-    return filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+    return filtered.filter(t=>t.category!=="Encargos/Juros");
   },[filtered,filters.txnType]);
   const totalExp     = useMemo(()=>expenses.reduce((s,t)=>s+Math.abs(t.amount),0),[expenses]);
   const totalCharge  = useMemo(()=>filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0),[filtered]);
-  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);  const catStats = useMemo(()=>{
-    const base=filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+  const catBreakdown = useMemo(()=>{const map={};expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value);},[expenses]);
+  const catStats = useMemo(()=>{
+    const base=filtered.filter(t=>t.category!=="Encargos/Juros");
     const total=base.reduce((s,t)=>s+t.amount,0);
     const map={};
     base.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;});
     return {map,total};
   },[filtered]);
-  // ── FIX 1: monthlyTrend agora respeita txnType==="charge" ──
+
   const monthlyTrend = useMemo(()=>{
     const map={};
     const base = filters.txnType==="charge"
-      ? filtered.filter(t=>t.category==="Encargos/Juros")
-      : filtered.filter(t=>t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+      ? filtered
+      : filtered.filter(t=>t.category!=="Encargos/Juros");
     base.forEach(t=>{
       if(!map[t.month]) map[t.month]={month:t.month,total:0};
       map[t.month].total+=t.amount;
@@ -1520,11 +1422,11 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
   },[filtered,filters.txnType]);
 
   const topMerchants=useMemo(()=>{const map={};expenses.forEach(t=>{const key=t.title.replace(/ - Parcela \d+\/\d+/g,"").trim();if(!map[key])map[key]={name:key,total:0,count:0};map[key].total+=t.amount;map[key].count++;});return Object.values(map).sort((a,b)=>b.total-a.total).slice(0,10).map(m=>({...m,total:+m.total.toFixed(2)}));},[expenses]);
-  // ── FIX 2: cardStats agora respeita txnType==="charge" ──
+
   const cardStats=useMemo(()=>uniqueCards.map(card=>{
     const txns = filters.txnType==="charge"
-      ? filtered.filter(t=>t.card===card&&t.category==="Encargos/Juros")
-      : filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros"&&t.category!=="Pagamento");
+      ? filtered.filter(t=>t.card===card)
+      : filtered.filter(t=>t.card===card&&t.category!=="Encargos/Juros");
     return {card,total:txns.reduce((s,t)=>s+t.amount,0),count:txns.length};
   }),[filtered,uniqueCards,filters.txnType]);
 
@@ -1532,7 +1434,7 @@ function Dashboard({ activePeople, onReset, dark, toggleTheme, onDeleteTransacti
 
   const tabContent=()=>{
     switch(activeTab){
-      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory} txnType={filters.txnType}/>;
+      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "transactions": return <TransactionsTab filtered={filtered} sortBy={sortBy} sortDir={sortDir} toggleSort={toggleSort} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "categories":   return <CategoriesTab catBreakdown={catBreakdown} expenses={expenses} totalExp={totalExp} setFilters={setFilters} setActiveTab={setActiveTab}/>;
       case "trends":       return <TrendsTab filtered={filtered} monthlyTrend={monthlyTrend} catBreakdown={catBreakdown} uniqueCards={uniqueCards} activePeople={activePeople}/>;
