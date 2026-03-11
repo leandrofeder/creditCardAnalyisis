@@ -245,11 +245,17 @@ function FilterSidebar({ activeTab, setActiveTab, filters, setFilters, activePeo
               {years.map(y=><button key={y} className={`chip tap${selectedYear===y?" active":""}`} onClick={()=>{set("selectedYear",y);set("selectedMonth","all");}}>{y}</button>)}
             </div>
           </div>
-        )}
-
-        <div className="filter-section">
+        )}        <div className="filter-section">
           <div className="filter-label">MÊS</div>
-          <div className="chips-scroll">{filteredMonths.map(m=><button key={m} className={`chip tap${selectedMonth===m?" active":""}`} onClick={()=>set("selectedMonth",m)}>{m==="all"?"Todos":m}</button>)}</div>
+          <select
+            className="filter-select"
+            value={selectedMonth}
+            onChange={e=>set("selectedMonth",e.target.value)}
+          >
+            {filteredMonths.map(m=>(
+              <option key={m} value={m}>{m==="all"?"Todos os meses":m}</option>
+            ))}
+          </select>
         </div>
 
         <div className="filter-section">
@@ -375,11 +381,17 @@ function FilterDrawer({ open, onClose, filters, setFilters, activePeople, cards,
                 {years.map(y=><button key={y} className={`chip tap${selectedYear===y?" active":""}`} onClick={()=>{set("selectedYear",y);set("selectedMonth","all");}}>{y}</button>)}
               </div>
             </div>
-          )}
-
-          <div className="filter-section">
+          )}          <div className="filter-section">
             <div className="filter-label">MÊS</div>
-            <div className="chips-scroll">{filteredMonths.map(m=><button key={m} className={`chip tap${selectedMonth===m?" active":""}`} onClick={()=>set("selectedMonth",m)}>{m==="all"?"Todos":m}</button>)}</div>
+            <select
+              className="filter-select"
+              value={selectedMonth}
+              onChange={e=>set("selectedMonth",e.target.value)}
+            >
+              {filteredMonths.map(m=>(
+                <option key={m} value={m}>{m==="all"?"Todos os meses":m}</option>
+              ))}
+            </select>
           </div>
 
           <div className="filter-section">
