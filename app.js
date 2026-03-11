@@ -186,7 +186,7 @@ const EXCLUDED_TITLES = [
   "pagamento recebido","pagamento efetuado","crédito em rotativo",
   "credito em rotativo","saldo em rotativo","crédito rotativo",
   "credito rotativo","saldo em atraso","saldo devedor","saldo anterior",
-  "estorno","reembolso","cashback","devolução","devolucao",
+  "estorno","reembolso","cashback","devolução","devolucao", "p agamento on line   -   + r$"
 ];
 
 function isExcludedTransaction(t) {
