@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>🔍 Ailos Parser Debug</title>
+  <style>
+    body { background:#0f0f1a; color:#e2e8f0; font-family:'DM Mono',monospace,monospace; padding:24px; font-size:13px; line-height:1.6; }
+    h1 { color:#a78bfa; font-size:18px; margin-bottom:4px; }
+    .sub { color:#64748b; font-size:11px; margin-bottom:20px; }
+    label { display:inline-block; background:#312e81; color:#c4b5fd; border:1px solid #4c1d95; border-radius:8px; padding:10px 20px; cursor:pointer; margin-bottom:16px; }
+    label:hover { background:#4c1d95; }
+    input[type=file] { display:none; }
+    pre { background:#0a0a14; border:1px solid #1e1b4b; border-radius:8px; padding:16px; overflow-x:auto; white-space:pre-wrap; word-break:break-word; font-size:12px; max-height:400px; overflow-y:auto; }
+    .ok   { color:#4ade80; }
+    .err  { color:#f87171; }
+    .warn { color:#fbbf24; }
+    .info { color:#60a5fa; }
+    .sec  { color:#c084fc; font-weight:bold; margin-top:8px; }
+    .box  { background:#0a0a14; border:1px solid #1e1b4b; border-radius:8px; padding:14px; margin-bottom:12px; }
+    .kv   { display:flex; gap:12px; flex-wrap:wrap; }
+    .kv span { background:#1e1b4b; border-radius:4px; padding:2px 8px; }
+    .kv .val { color:#4ade80; font-weight:bold; }
+    .kv .bad { color:#f87171; font-weight:bold; }
+    button { background:#312e81; color:#c4b5fd; border:1px solid #4c1d95; border-radius:6px; padding:6px 14px; cursor:pointer; font-family:inherit; margin-top:8px; }
+    button:hover { background:#4c1d95; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid #4c1d95; border-top-color:#a78bfa; border-radius:50%; animation:spin .6s linear infinite; margin-left:8px; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+<h1>🔍 Ailos Parser Debug — Browser</h1>
+<div class="sub">Arraste ou selecione o PDF da fatura Ailos. Todos os dados ficam locais.</div>
+
+<label>📂 Selecionar PDF da fatura Ailos<input type="file" accept=".pdf" id="fileIn"/></label>
+<span id="spinner" style="display:none" class="spinner"></span>
+
+<div id="output" style="display:none">
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:8px">ÍNDICES DE SEÇÃO</div>
+    <div class="kv" id="kv-indices"></div>
+  </div>
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:8px">TOTAIS CALCULADOS</div>
+    <div class="kv" id="kv-totals"></div>
+  </div>
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:6px">TRECHO MOVIMENTAÇÕES</div>
+    <pre id="pre-movtext"></pre>
+  </div>
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:6px">LOG DETALHADO</div>
+    <pre id="pre-log"></pre>
+    <button onclick="copyLog()">📋 Copiar log</button>
+  </div>
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:6px">TRANSAÇÕES EMITIDAS (<span id="txn-count">0</span>)</div>
+    <pre id="pre-txns"></pre>
+  </div>
+  <div class="box">
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:.06em;margin-bottom:6px">TEXTO COMPLETO DO PDF (primeiros 6000 chars)</div>
+    <pre id="pre-fulltext"></pre>
+    <button onclick="copyFullText()">📋 Copiar texto completo</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let _fullText = "";
+let _logLines = [];
+
+function log(cls, ...args) {
+  const msg = args.join(" ");
+  _logLines.push({ cls, msg });
+  const el = document.getElementById("pre-log");
+  const span = document.createElement("span");
+  span.className = cls;
+  span.textContent = msg + "\n";
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+function copyLog() {
+  navigator.clipboard.writeText(_logLines.map(l => l.msg).join("\n"))
+    .then(() => alert("Log copiado!"));
+}
+function copyFullText() {
+  navigator.clipboard.writeText(_fullText)
+    .then(() => alert("Texto copiado!"));
+}
+
+function kv(container, key, val, good, expected) {
+  const box = document.createElement("span");
+  box.innerHTML = `<span style="color:#94a3b8">${key}:</span> `;
+  const v = document.createElement("span");
+  v.className = "val";
+  if (good === false) v.className = "bad";
+  v.textContent = val;
+  box.appendChild(v);
+  if (expected !== undefined) {
+    const ex = document.createElement("span");
+    ex.style.color = "#64748b";
+    ex.textContent = ` (esperado: ${expected})`;
+    box.appendChild(ex);
+  }
+  container.appendChild(box);
+}
+
+document.getElementById("fileIn").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // reset
+  _fullText = ""; _logLines = [];
+  ["pre-log","pre-movtext","pre-txns","kv-indices","kv-totals"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === "PRE") el.textContent = "";
+    else el.innerHTML = "";
+  });
+  document.getElementById("output").style.display = "block";
+  document.getElementById("spinner").style.display = "inline-block";
+
+  try {
+    await runDebug(file);
+  } catch(err) {
+    log("err", "ERRO FATAL: " + err.message + "\n" + err.stack);
+  }
+
+  document.getElementById("spinner").style.display = "none";
+});
+
+async function runDebug(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  log("info", `PDF carregado: ${pdf.numPages} páginas`);
+
+  // ── Extrai texto ────────────────────────────────────────────────────
+  let text = "";
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page    = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(i => i.str).join(" ") + " ";
+    text += pageText;
+    log("info", `  Página ${p}: ${content.items.length} itens, ${pageText.length} chars`);
+
+    // Mostrar itens da seção MOVIMENTA na página onde aparecer
+    if (pageText.includes("MOVIMENTA") || pageText.includes("SALDO ANTERIOR")) {
+      log("sec", `  → Página ${p} contém MOVIMENTA/SALDO ANTERIOR`);
+      content.items.forEach((item, idx) => {
+        if (item.str.trim()) log("info", `    item[${idx}]: ${JSON.stringify(item.str)}`);
+      });
+    }
+  }
+
+  _fullText = text;
+  document.getElementById("pre-fulltext").textContent = text.slice(0, 6000);
+
+  // ── Constantes ──────────────────────────────────────────────────────
+  const PT_NUM = {JAN:"01",FEV:"02",MAR:"03",ABR:"04",MAI:"05",JUN:"06",
+                  JUL:"07",AGO:"08",SET:"09",OUT:"10",NOV:"11",DEZ:"12"};
+
+  // ── Índices de seção ────────────────────────────────────────────────
+  log("sec", "\n=== ÍNDICES DE SEÇÃO ===");
+
+  const movIdx = (() => {
+    let i = text.search(/MOVIMENTA[\S\s]{0,6}DA\s+CONTA/i);
+    log("info", `  /MOVIMENTA[\\S\\s]{0,6}DA\\s+CONTA/ → ${i}`);
+    if (i < 0) {
+      i = text.search(/LAN[\S\s]{0,8}MENTOS\s*[-–]\s*AILOS/i);
+      log("warn", `  fallback /LAN...MENTOS-AILOS/ → ${i}`);
+    }
+    if (i < 0) {
+      i = text.search(/SALDO\s+ANTERIOR/i);
+      log("warn", `  fallback /SALDO ANTERIOR/ → ${i}`);
+    }
+    return i;
+  })();
+
+  const dataDescrIdx = text.search(/DATA\s+DESCRI/i);
+  log("info", `  /DATA\\s+DESCRI/ → ${dataDescrIdx}`);
+
+  const allTotalDE = [...text.matchAll(/TOTAL\s+DE\s+\w/gi)];
+  const totalDeIdx = allTotalDE.length
+    ? allTotalDE[allTotalDE.length - 1].index
+    : text.length;
+  log("info", `  /TOTAL DE \\w/ (último) → ${totalDeIdx} (${allTotalDE.length} ocorrências)`);
+
+  const idxBox = document.getElementById("kv-indices");
+  kv(idxBox, "movIdx",      movIdx,      movIdx >= 0,       "≥ 0");
+  kv(idxBox, "dataDescrIdx",dataDescrIdx,dataDescrIdx >= 0, "≥ 0");
+  kv(idxBox, "totalDeIdx",  totalDeIdx,  true);
+  kv(idxBox, "textLen",     text.length, true);
+
+  // ── Mostra trecho MOVIMENTAÇÕES ─────────────────────────────────────
+  if (movIdx >= 0 && dataDescrIdx > movIdx) {
+    const movText = text.slice(movIdx, dataDescrIdx);
+    document.getElementById("pre-movtext").textContent = movText;
+    log("sec", "\n=== MOVIMENTOS CAPTURADOS ===");
+
+    const movRx = /(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s+(-?)R\$\s*([\d.]+,\d{2})/gi;
+    const entries = [];
+    for (const m of movText.matchAll(movRx)) {
+      const neg   = m[4] === "-";
+      const amt   = parseFloat(m[5].replace(/\./g,"").replace(",","."));
+      const title = m[3].replace(/\s{2,}/g," ").trim();
+      log(neg ? "warn" : "ok",
+        `  ${neg?"NEG":"POS"} | ${m[1]} ${m[2]} | "${title}" | R$ ${amt.toFixed(2)}`);
+      if (/^(SALDO\s+ANTERIOR|MOVIMENTA|PAGTO|PAGAMENTO)/i.test(title)) {
+        log("info", `    → IGNORADO (saldo/pagamento)`);
+        continue;
+      }
+      entries.push({ day:m[1], mon:m[2].toUpperCase(), title, amt, neg });
+    }
+
+    // Cancelamento de pares
+    const bkt = {};
+    for (const e of entries) if (!e.neg) bkt[e.amt.toFixed(2)] = (bkt[e.amt.toFixed(2)] || 0) + 1;
+    log("sec", "\n  Bucket positivos: " + JSON.stringify(bkt));
+    for (const e of entries) if (e.neg && (bkt[e.amt.toFixed(2)] || 0) > 0) bkt[e.amt.toFixed(2)]--;
+    log("sec", "  Bucket após cancelar negativos: " + JSON.stringify(bkt));
+
+    // Saldo residual (método primário)
+    const saldoM = movText.match(/SALDO\s+ANTERIOR\s+R\$\s*([\d.]+,\d{2})/i);
+    let saldoResidual = null;
+    if (saldoM) {
+      const ant = parseFloat(saldoM[1].replace(/\./g,"").replace(",","."));
+      let pagto = 0;
+      for (const m of movText.matchAll(movRx)) {
+        if (m[4] === "-") {
+          const t = m[3].replace(/\s{2,}/g," ").trim();
+          if (/^(PAGTO|PAGAMENTO)/i.test(t))
+            pagto += parseFloat(m[5].replace(/\./g,"").replace(",","."));
+        }
+      }
+      const res = Math.round((ant - pagto) * 100) / 100;
+      saldoResidual = res > 0.009 ? res : null;
+      log("ok", `\n  saldoAnterior=${ant} pagto=${pagto} residual=${saldoResidual} (esperado: 1748.18)`);
+    } else {
+      log("err", "  SALDO ANTERIOR não encontrado no trecho mov!");
+    }
+
+    // Saldo residual (fallback RESUMO)
+    if (!saldoResidual) {
+      const rA = text.match(/([\d.]+,\d{2})\s+FATURA\s+ANTERIOR/i);
+      const rP = text.match(/[-–]\s*([\d.]+,\d{2})\s+PAGAMENTOS?\s+RECEBIDOS/i);
+      if (rA && rP) {
+        const ant  = parseFloat(rA[1].replace(/\./g,"").replace(",","."));
+        const pago = parseFloat(rP[1].replace(/\./g,"").replace(",","."));
+        saldoResidual = Math.round((ant - pago) * 100) / 100;
+        log("warn", `  FALLBACK resumo: ant=${ant} pago=${pago} residual=${saldoResidual}`);
+      } else {
+        log("err", `  FALLBACK resumo falhou: rA=${rA?.[1]} rP=${rP?.[1]}`);
+      }
+    }
+
+    // Encargos emitidos
+    const txns = [];
+    const yearMatch = text.match(/20\d{2}/);
+    const year = yearMatch?.[0] || "2026";
+    for (const e of entries) {
+      if (e.neg) continue;
+      const k = e.amt.toFixed(2);
+      if ((bkt[k] || 0) > 0) {
+        bkt[k]--;
+        const mon = PT_NUM[e.mon] || "01";
+        txns.push({ date:`${year}-${mon}-${e.day}`, title:e.title, amount:e.amt, category:"Encargos/Juros" });
+        log("ok", `  EMIT encargo: "${e.title}" R$ ${e.amt.toFixed(2)}`);
+      } else {
+        log("info", `  SKIP (cancelado): "${e.title}" R$ ${e.amt.toFixed(2)}`);
+      }
+    }
+
+    if (saldoResidual) {
+      txns.push({ date:`${year}-01-01`, title:"Saldo Anterior (residual)", amount:saldoResidual, category:"Encargos/Juros" });
+      log("ok", `  EMIT residual: R$ ${saldoResidual.toFixed(2)}`);
+    }
+
+    let totalEncargos = txns.reduce((s,t) => s + t.amount, 0);
+    log("ok", `\n  totalEncargos+residual = ${totalEncargos.toFixed(2)} (esperado: 1918.77)`);
+
+    // Compras
+    log("sec", "\n=== COMPRAS ===");
+    const purText = text.slice(dataDescrIdx, totalDeIdx);
+    const purRx = /(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(.+?)\s{3,}(\S[\w\s]{0,30}?)\s+R\$\s*([\d.]+,\d{2})/gi;
+    let totalCompras = 0, nCompras = 0;
+    for (const m of purText.matchAll(purRx)) {
+      const amount = parseFloat(m[5].replace(/\./g,"").replace(",","."));
+      const title  = m[3].replace(/\s+\d{2}\/\d{2}$/,"").replace(/\s{2,}/g," ").trim();
+      if (!isNaN(amount) && amount > 0 && title.length > 1
+          && !title.match(/^(DATA|DESCRI|CIDADE|TOTAL|SALDO|LEANDRO|P.GINA|REF\s|de\s+\d)/i)) {
+        const mon = PT_NUM[m[2].toUpperCase()] || "01";
+        txns.push({ date:`${year}-${mon}-${m[1]}`, title, amount, category:"compra" });
+        totalCompras += amount;
+        nCompras++;
+      }
+    }
+    log("ok", `  totalCompras = ${totalCompras.toFixed(2)} (esperado: 4152.33), n=${nCompras} (esperado: 48)`);
+
+    const total = txns.reduce((s,t) => s + t.amount, 0);
+    log(Math.abs(total - 6071.10) < 0.02 ? "ok" : "err",
+      `\n  TOTAL FINAL = ${total.toFixed(2)} (esperado: 6071.10) ${Math.abs(total - 6071.10) < 0.02 ? "✓" : "✗"}`);
+
+    // Atualiza painel de totais
+    const totBox = document.getElementById("kv-totals");
+    kv(totBox, "saldoResidual", saldoResidual?.toFixed(2) ?? "null", saldoResidual > 0, "1748.18");
+    kv(totBox, "encargos",      totalEncargos.toFixed(2), Math.abs(totalEncargos - 1918.77) < 1, "1918.77");
+    kv(totBox, "compras",       totalCompras.toFixed(2),  Math.abs(totalCompras - 4152.33) < 1,  "4152.33");
+    kv(totBox, "TOTAL",         total.toFixed(2),         Math.abs(total - 6071.10) < 0.02,      "6071.10");
+
+    // Lista de transações
+    document.getElementById("txn-count").textContent = txns.length;
+    document.getElementById("pre-txns").textContent =
+      txns.map(t => `${t.date}  ${t.amount.toFixed(2).padStart(9)}  ${t.category.padEnd(18)}  ${t.title}`).join("\n");
+
+  } else {
+    log("err", `\nERRO: movIdx=${movIdx} dataDescrIdx=${dataDescrIdx} — seção MOVIMENTAÇÕES não encontrada!`);
+    log("warn", "Primeiros 300 chars do texto:");
+    log("info", text.slice(0, 300));
+    log("warn", "\nBusca manual de palavras-chave:");
+    for (const kw of ["MOVIMENTA","SALDO ANTERIOR","DATA   DESCRI","LANCAMENTOS","AILOS"]) {
+      const i = text.indexOf(kw);
+      log(i >= 0 ? "ok" : "err", `  "${kw}" → ${i >= 0 ? i : "NÃO ENCONTRADO"}`);
+    }
+    // Mostra trecho de texto ao redor de SALDO
+    const si = text.indexOf("SALDO");
+    if (si >= 0) {
+      log("info", `\n  Contexto ao redor de "SALDO" (pos ${si}):`);
+      log("info", JSON.stringify(text.slice(Math.max(0,si-50), si+200)));
+    }
+    document.getElementById("pre-movtext").textContent =
+      "(seção não encontrada)\n\nTexto completo:\n" + text.slice(0, 2000);
+    document.getElementById("pre-fulltext").textContent = text.slice(0, 6000);
+  }
+
+  log("sec", "\n=== FIM DO DIAGNÓSTICO ===");
+}
+</script>
+</body>
+</html>

@@ -35,8 +35,8 @@ const CAT_GROUPS = [
 const PT_MO_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 const EXCLUDED_TITLES = [
-  "pagamento recebido","pagamento efetuado","crédito em rotativo",
-  "credito em rotativo","saldo em rotativo","crédito rotativo",
+  "pagamento recebido","pagamento efetuado","pagamento on line","pagamento online",
+  "crédito em rotativo","credito em rotativo","saldo em rotativo","crédito rotativo",
   "credito rotativo","saldo em atraso","estorno","reembolso",
   "cashback","devolução","devolucao",
 ];

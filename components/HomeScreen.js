@@ -4,10 +4,13 @@
 
 function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAddFiles, dark, toggleTheme }) {
   const canJoin = people.length >= 2;
-
   const stats = people.map(p => {
-    const exp = p.transactions.filter(t => t.amount>0 && t.category!=="Encargos/Juros");
-    return {...p, total:exp.reduce((s,t)=>s+t.amount,0), count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
+    const exp     = p.transactions.filter(t => t.amount>0 && t.category!=="Encargos/Juros");
+    const charges = p.transactions.filter(t => t.amount>0 && t.category==="Encargos/Juros");
+    const totalExp     = exp.reduce((s,t)=>s+t.amount,0);
+    const totalCharge  = charges.reduce((s,t)=>s+t.amount,0);
+    const totalFatura  = totalExp + totalCharge;
+    return {...p, total:totalFatura, totalExp, totalCharge, count:exp.length, cards:[...new Set(p.transactions.map(t=>t.card))]};
   });
 
   return (
@@ -28,12 +31,12 @@ function HomeScreen({ people, onOpenDashboard, onAddPerson, onRemovePerson, onAd
             {stats.map(p=>(
               <div key={p.name} className="section-card" style={{borderLeft:`3px solid ${p.color}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                  <PersonAvatar name={p.name} color={p.color} size={42} fontSize={16}/>
-                  <div style={{flex:1,minWidth:0}}>
+                  <PersonAvatar name={p.name} color={p.color} size={42} fontSize={16}/>                  <div style={{flex:1,minWidth:0}}>
                     <div style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:p.color,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
                       <span style={{fontSize:11,color:"var(--text-faint)"}}>{p.count} compras</span>
                       <span style={{fontSize:14,fontWeight:500,color:p.color,fontFamily:"'DM Mono',monospace"}}>{fmtShort(p.total)}</span>
+                      {p.totalCharge>0&&<span style={{fontSize:10,color:"#ef4444",fontFamily:"'DM Mono',monospace"}}>+{fmtShort(p.totalCharge)} enc.</span>}
                     </div>
                   </div>
                 </div>

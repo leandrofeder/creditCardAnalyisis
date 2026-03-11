@@ -47,10 +47,10 @@ function Dashboard({activePeople, onReset, dark, toggleTheme, onDeleteTransactio
       const d=String(a[sortBy]).localeCompare(String(b[sortBy]));return sortDir==="desc"?-d:d;
     });
   }, [transactions, filters, sortBy, sortDir]);
-
   const expenses     = useMemo(() => filters.txnType==="charge" ? filtered.filter(t=>t.category==="Encargos/Juros") : filtered.filter(t=>t.category!=="Encargos/Juros"), [filtered, filters.txnType]);
   const totalExp     = useMemo(() => expenses.reduce((s,t) => s+Math.abs(t.amount), 0), [expenses]);
   const totalCharge  = useMemo(() => filtered.filter(t=>t.category==="Encargos/Juros"&&t.amount>0).reduce((s,t)=>s+t.amount,0), [filtered]);
+  const totalFatura  = useMemo(() => totalExp + (filters.txnType==="charge" ? 0 : totalCharge), [totalExp, totalCharge, filters.txnType]);
   const catBreakdown = useMemo(() => { const map={}; expenses.forEach(t=>{map[t.category]=(map[t.category]||0)+t.amount;}); return Object.entries(map).map(([name,value])=>({name,value:+value.toFixed(2)})).sort((a,b)=>b.value-a.value); }, [expenses]);
   const catStats     = useMemo(() => {
     const base  = filtered.filter(t => t.category!=="Encargos/Juros");
@@ -98,7 +98,7 @@ function Dashboard({activePeople, onReset, dark, toggleTheme, onDeleteTransactio
 
   const tabContent = () => {
     switch(activeTab){
-      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
+      case "overview":     return <OverviewTab filtered={filtered} expenses={expenses} totalExp={totalExp} totalCharge={totalCharge} totalFatura={totalFatura} catBreakdown={catBreakdown} topMerchants={topMerchants} cardStats={cardStats} setFilters={setFilters} setActiveTab={setActiveTab} uniqueCards={uniqueCards} monthlyTrend={monthlyTrend} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "transactions": return <TransactionsTab filtered={filtered} sortBy={sortBy} sortDir={sortDir} toggleSort={toggleSort} activePeople={activePeople} onDeleteTransaction={onDeleteTransaction} onEditCategory={onEditCategory}/>;
       case "categories":   return <CategoriesTab catBreakdown={catBreakdown} expenses={expenses} totalExp={totalExp} setFilters={setFilters} setActiveTab={setActiveTab}/>;
       case "trends":       return <TrendsTab filtered={filtered} monthlyTrend={monthlyTrend} catBreakdown={catBreakdown} uniqueCards={uniqueCards} activePeople={activePeople}/>;

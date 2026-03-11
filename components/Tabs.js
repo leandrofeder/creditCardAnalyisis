@@ -4,8 +4,8 @@
    CategoriesTab, TrendsTab, BottomNav
    ═══════════════════════════════════════════════ */
 
-const { BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
-        XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } = Recharts;
+var { BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
+      XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } = Recharts;
 
 // ─── COMPARISON PANEL ─────────────────────────
 function ComparisonPanel({ activePeople, filtered }) {
@@ -71,7 +71,7 @@ function ComparisonPanel({ activePeople, filtered }) {
 }
 
 // ─── OVERVIEW TAB ─────────────────────────────
-function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
+function OverviewTab({ filtered, expenses, totalExp, totalCharge, totalFatura, catBreakdown, topMerchants, cardStats, setFilters, setActiveTab, uniqueCards, monthlyTrend, activePeople, onDeleteTransaction, onEditCategory }) {
   const isMobile = useWindowWidth() < 768;
   const ttStyle = {background:"var(--bg-card)",border:"1px solid var(--border-med)",borderRadius:8,fontSize:11,fontFamily:"'DM Mono',monospace",color:"var(--text-primary)"};
   const showComparison = activePeople.length > 1;
@@ -79,19 +79,18 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
   return (
     <div className="anim-fade-up">
       <div className="kpi-grid anim-children">
-        <KpiCard icon="💸" label="TOTAL GASTOS"   value={fmtShort(totalExp)}    sub={`${expenses.length} compras`} color="#f97316"/>
-        <KpiCard icon="⚠️" label="ENCARGOS/JUROS" value={fmtShort(totalCharge)} sub="Clique p/ filtrar" color="#ef4444" onClick={()=>setFilters(f=>({...f,txnType:"charge"}))}/>
-        <KpiCard icon="📊" label="TICKET MÉDIO"   value={fmtShort(totalExp/(expenses.length||1))} sub="por transação" color="#818cf8"/>
-        <KpiCard icon="🛒" label="COMPRAS"         value={expenses.length} sub="transações" color="#06b6d4"/>
+        <KpiCard icon="💳" label="TOTAL DA FATURA" value={fmtShort(totalFatura)} sub={totalCharge>0?`incl. ${fmtShort(totalCharge)} encargos`:`${expenses.length} transações`} color="#f97316"/>
+        <KpiCard icon="⚠️" label="ENCARGOS/JUROS"  value={fmtShort(totalCharge)} sub="Clique p/ filtrar" color="#ef4444" onClick={()=>setFilters(f=>({...f,txnType:"charge"}))}/>
+        <KpiCard icon="🛒" label="COMPRAS"           value={fmtShort(totalExp)}   sub={`${expenses.length} transações`} color="#06b6d4"/>
+        <KpiCard icon="📊" label="TICKET MÉDIO"      value={fmtShort(totalExp/(expenses.length||1))} sub="por compra" color="#818cf8"/>
       </div>
 
       {showComparison&&<ComparisonPanel activePeople={activePeople} filtered={filtered}/>}
 
       {cardStats.length>0&&(
-        <div className="card-stats-grid">
-          {cardStats.map(cs=>{
+        <div className="card-stats-grid">          {cardStats.map(cs=>{
             const color = CARD_COLORS[cs.card]||"#818cf8";
-            const pct   = totalExp>0?(cs.total/totalExp*100):0;
+            const pct   = totalFatura>0?(cs.total/totalFatura*100):0;
             return (
               <div key={cs.card} className="card-stat tap anim-fade-up" style={{"--color":color}} onClick={()=>setFilters(f=>({...f,selectedCard:f.selectedCard===cs.card?"all":cs.card}))}>
                 <div className="cs-header"><div><div className="cs-name" style={{color}}>{cs.card}</div><div className="cs-count">{cs.count} compras</div></div><div className="cs-value">{fmt(cs.total)}</div></div>
@@ -109,10 +108,9 @@ function OverviewTab({ filtered, expenses, totalExp, totalCharge, catBreakdown, 
           <ResponsiveContainer width="100%" height={isMobile?170:200}>
             <PieChart><Pie data={catBreakdown.slice(0,8)} dataKey="value" cx="50%" cy="50%" outerRadius={isMobile?75:90} innerRadius={isMobile?38:48}>{catBreakdown.slice(0,8).map(e=><Cell key={e.name} fill={CAT_COLORS[e.name]||"#6b7280"}/>)}</Pie><Tooltip formatter={v=>fmt(v)} contentStyle={ttStyle}/></PieChart>
           </ResponsiveContainer>
-          <div style={{marginTop:8}}>
-            {catBreakdown.slice(0,5).map(c=>{
+          <div style={{marginTop:8}}>            {catBreakdown.slice(0,5).map(c=>{
               const color = CAT_COLORS[c.name]||"#6b7280";
-              const pct   = totalExp>0?((c.value/totalExp)*100).toFixed(1):"0";
+              const pct   = totalFatura>0?((c.value/totalFatura)*100).toFixed(1):"0";
               return (<div key={c.name} className="cat-breakdown-item tap" onClick={()=>{setFilters(f=>({...f,categoryFilter:[c.name]}));setActiveTab("transactions");}}><span className="cat-dot" style={{background:color}}/><span className="cat-name">{c.name}</span><span className="cat-pct">{pct}%</span><span className="cat-amt">{fmt(c.value)}</span></div>);
             })}
           </div>
